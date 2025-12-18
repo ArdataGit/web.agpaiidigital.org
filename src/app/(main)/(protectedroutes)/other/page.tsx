@@ -4,7 +4,6 @@ import Modal from "@/components/modal/modal";
 import TopBar from "@/components/nav/topbar";
 import { useModal } from "@/utils/hooks/use_modal";
 import { useQueryClient } from "@tanstack/react-query";
-import clsx from "clsx";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -14,152 +13,35 @@ export default function OthersMenuPage() {
 
 	const { show, toggle } = useModal();
 	const [showLogoutModal, setShowLogoutModal] = useState(false);
-	const [isRamadhanFeatureEnabled, setIsRamadhanFeatureEnabled] =
-		useState(false);
-	const [isLoading, setIsLoading] = useState(true);
-
-	useEffect(() => {
-		// Check cache first
-		const cachedFeature = sessionStorage.getItem('ramadhan_feature');
-		if (cachedFeature !== null) {
-			setIsRamadhanFeatureEnabled(cachedFeature === 'true');
-			setIsLoading(false);
-			return;
-		}
-
-		fetch(
-			`${process.env.NEXT_PUBLIC_MITRA_URL}/api/feature-status/ramadhan_feature`
-		)
-			.then((response) => response.json())
-			.then((data) => {
-				setIsRamadhanFeatureEnabled(data.is_enabled);
-				sessionStorage.setItem('ramadhan_feature', String(data.is_enabled));
-				setIsLoading(false);
-			})
-			.catch((error) => {
-				console.error("Error fetching feature status:", error);
-				setIsLoading(false);
-			});
-	}, []);
-
-	const menuList = [
-		{
-			label: "Doa",
-			icon: "/img/doa.svg",
-			link: "/doa",
-		},
-		{
-			label: "Struktur Organisasi",
-			icon: "/svg/organisasi.svg",
-			link: "/struktur",
-		},
-		{
-			label: "Ruang Guru",
-			icon: "/img/ruang_guru.svg",
-			link: "/ruang-guru",
-		},
-		{
-			label: "Tryout",
-			icon: "/svg/latihan_soal.svg",
-			link: "https://cbt.agpaiidigital.org",
-		},
-		{
-			label: "Acara",
-			icon: "/svg/acara.svg",
-			link: "/event",
-		},
-		{
-			label: "RPP Digital",
-			icon: "/svg/rpp_digital.svg",
-			link: "/perangkat-ajar",
-		},
-		{
-			label: "Waktu Shalat",
-			icon: "/svg/waktu_sholat.svg",
-			link: "/waktu-sholat",
-		},
-		{
-			label: "Dokumen Cloud",
-			icon: "/svg/dokumen_cloud.svg",
-			link: "/cloud",
-		},
-		{
-			label: "Mitra",
-			icon: "/img/icon_mitra_new.png",
-			link: "/mitra",
-		},
-		{
-			label: "Perangkat Ajar",
-			icon: "/img/icon_perangkat_ajar.png",
-			link: "/perangkat-ajar",
-		},
-		{
-			label: "Live & Video",
-			icon: "/img/youtubee.svg",
-			link: "/live",
-		},
-		{
-			label: "Tasbih Digital",
-			icon: "/img/tasbih.svg",
-			link: "/tasbih",
-		},
-		{
-			label: "Wakaf",
-			icon: "/img/wakaf.png",
-			link: "https://apps.satuwakaf.id/campaign/ce7fcf60-7b55-4ee7-9531-9f0d599c7e60?share=1&title=dana-abadi-pendidikan-agama-islam-di-sekolah-berbasis-wakaf",
-			external: true,
-		},
-		{
-			label: isRamadhanFeatureEnabled ? "Artikel" : "Ramadhan",
-			icon: isRamadhanFeatureEnabled
-				? "/img/article.png"
-				: "/img/ramadan-logo.svg",
-			link: isRamadhanFeatureEnabled ? "/article" : "/ramadhan",
-		},
-		{
-			label: "Marketplace",
-			icon: "/img/marketplace.svg",
-			link: "/marketplace",
-		},
-		{
-			label: "PPOB",
-			icon: "/svg/cartppob.svg",
-			link: "/ecommerce",
-		},
-		{
-			label: "Log Out",
-			icon: "/img/logout.png",
-			link: null,
-		},
-	];
+	const [isLoading, setIsLoading] = useState(false);
 
 	const menuCategories = [
 		{
 			title: "Mengaji",
-			icon: "/svg/icon-quran.svg",
+			icon: "/svg/material-symbols_window.svg",
 			items: [
-				{ label: "Doa", icon: "/img/ikon-doa.svg", link: "/doa" },
-				{ label: "Al-Quran", icon: "/svg/ikon-alquran.svg", link: "/murrotal/surat" },
-				{ label: "Tasbih Digital", icon: "/svg/ikon-tasbih.svg", link: "/tasbih" },
-				{ label: "Arah Kiblat", icon: "/svg/ikon-kabah.svg", link: "/arah-kiblat" },
-				{ label: "Waktu Shalat", icon: "/svg/ikon-solat.svg", link: "/waktu-sholat" },
-				{ label: "Ramadhan", icon: "/svg/ikon-ramadhan.svg", link: "/ramadhan" },
-				{ label: "Wakaf", icon: "/svg/ikon-wakaf.svg", link: "https://apps.satuwakaf.id/campaign/ce7fcf60-7b55-4ee7-9531-9f0d599c7e60?share=1&title=dana-abadi-pendidikan-agama-islam-di-sekolah-berbasis-wakaf", external: true },
+				{ label: "Doa", icon: "/svg/ikon doa.svg", link: "/doa" },
+				{ label: "Al-Quran", icon: "/svg/ikon alquran.svg", link: "/murrotal/surat" },
+				{ label: "Tasbih Digital", icon: "/svg/tasbih.svg", link: "/tasbih" },
+				{ label: "Arah Kiblat", icon: "/svg/ikon kabah.svg", link: "/arah-kiblat" },
+				{ label: "Waktu Shalat", icon: "/svg/ikon solat.svg", link: "/waktu-sholat" },
+				{ label: "Ramadhan", icon: "/svg/ikon ramadhan.svg", link: "/ramadhan" },
+				{ label: "Wakaf", icon: "/svg/ikon wakaf.svg", link: "https://apps.satuwakaf.id/campaign/ce7fcf60-7b55-4ee7-9531-9f0d599c7e60?share=1&title=dana-abadi-pendidikan-agama-islam-di-sekolah-berbasis-wakaf", external: true },
 			],
 		},
 		{
 			title: "Edukasi",
 			icon: "/svg/icon-book.svg",
 			items: [
-				{ label: "Ruang Guru", icon: "/svg/ikon-guru.svg", link: "/ruang-guru" },
-				{ label: "Perangkat Ajar", icon: "/svg/ikon-perangkat.svg", link: "/perangkat-ajar" },
+				{ label: "Ruang Guru", icon: "/svg/ikon guru.svg", link: "/ruang-guru" },
+				{ label: "Perangkat Ajar", icon: "/svg/ikon perangkat.svg", link: "/perangkat-ajar" },
 				{ label: "RPP Digital", icon: "/svg/ikon-rpp.svg", link: "/perangkat-ajar" },
-				{ label: "Tryout", icon: "/svg/ikon-tryout.svg", link: "https://cbt.agpaiidigital.org" },
+				{ label: "Tryout", icon: "/svg/ikon try out.svg", link: "https://cbt.agpaiidigital.org" },
 			],
 		},
 		{
 			title: "Perdagangan",
-			icon: "/svg/icon-store.svg",
+			icon: "/svg/ion_bag.svg",
 			items: [
 				{ label: "Marketplace", icon: "/svg/ikon-marketplace.svg", link: "/marketplace" },
 				{ label: "PPOB", icon: "/svg/ikon-ppob.svg", link: "/ecommerce" },
@@ -168,21 +50,14 @@ export default function OthersMenuPage() {
 		},
 		{
 			title: "Acara dan Organisasi",
-			icon: "/svg/icon-member.svg",
+			icon: "/svg/ion_bag.svg",
 			items: [
-				{ label: "Acara", icon: "/svg/ikon-event.svg", link: "/event" },
+				{ label: "Acara", icon: "/svg/ikon event.svg", link: "/event" },
 				{ label: "Struktur Organisasi", icon: "/svg/ikon-struktur.svg", link: "/struktur" },
 				{ label: "Informasi Anggota", icon: "/svg/ikon-anggota.svg", link: "/member" },
 				{ label: "KTA Digital", icon: "/svg/ikon-kta.svg", link: "/kta" },
 				{ label: "Live dan Video", icon: "/svg/ikon-live.svg", link: "/live" },
 				{ label: "Sosial Media", icon: "/svg/ikon-sosmed.svg", link: "/social-media" },
-			],
-		},
-		{
-			title: "Akun",
-			icon: "/svg/icon-user.svg",
-			items: [
-				{ label: "Log Out", icon: "/img/logout.png", link: null, isLogout: true },
 			],
 		},
 	];

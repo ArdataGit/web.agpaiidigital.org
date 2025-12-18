@@ -349,7 +349,7 @@ export default function Home() {
       <div className="flex max-w-[480px] z-[996] top-0 left-0 right-0 bg-white px-8 py-6">
         <div className="flex items-center justify-between gap-x-8">
           <div className="flex items-center gap-2">
-            <img src="/svg/handswing.svg" alt="sapa" className="size-8 text-slate-600" />
+            <img src="img/waving.png" alt="sapa" className="size-8 text-slate-600" />
             <div className="pr-3 ml-2">
               <p className="text-sm text-slate-500">Selamat Pagi</p>
               <p className="text-md font-semibold text-slate-700">{auth.name}

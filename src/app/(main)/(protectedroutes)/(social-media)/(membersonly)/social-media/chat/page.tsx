@@ -309,7 +309,7 @@ export default function ChatIndex() {
 			</div>
 
 			{/* BOTTOM NAVIGATION BAR */}
-			<div className="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto border-t border-slate-200 bg-white px-0 py-0 flex justify-around items-center">
+			<div className="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto bg-white px-0 py-0 flex justify-around items-center">
 				<Link
 					href="/social-media"
 					className="flex-1 flex flex-col items-center justify-center py-3 px-4 text-slate-400"
@@ -335,7 +335,7 @@ export default function ChatIndex() {
 				</Link>
 				<Link
 					href="/social-media/chat"
-					className="flex-1 flex flex-col items-center justify-center py-3 px-4 text-teal-700 border-b-2 border-teal-700"
+					className="flex-1 flex flex-col items-center justify-center py-3 px-4 text-teal-700"
 				>
 					<ChatBubbleLeftIcon className="size-6 mb-0.5" />
 					<span className="text-xs">Pesan</span>
