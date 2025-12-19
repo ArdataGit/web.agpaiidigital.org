@@ -1,15 +1,14 @@
 "use client";
 import { useAuth } from "@/utils/context/auth_context";
 import {
-  BellIcon,
-  HeartIcon,
+  ChatBubbleLeftIcon,
   HomeIcon,
+  HeartIcon as HeartOutlineIcon,
   UserIcon,
-} from "@heroicons/react/24/solid";
-import clsx from "clsx";
+  PlusIcon,
+} from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ReactNode } from "react";
 
 export default function SocialMediaNavbar() {
   const { auth } = useAuth();
@@ -19,64 +18,62 @@ export default function SocialMediaNavbar() {
     return hiddenNavPages.some((page) => pathname.includes(page));
   };
 
-  const navList: {
-    label: string;
-    icon: ReactNode;
-    link: string;
-    active?: boolean;
-  }[] = [
-    {
-      label: "Beranda",
-      icon: <HomeIcon className="size-7 -mb-0.5 fill-inherit" />,
-      active: pathname === "/social-media",
-      link: "/social-media",
-    },
-    {
-      label: "Disukai",
-      icon: <HeartIcon className="size-7 -mb-0.5 fill-inherit" />,
-      active: pathname === "/social-media/liked",
-      link: "/social-media/liked",
-    },
-    {
-      label: "Notifikasi",
-      icon: <BellIcon className="size-7 fill-inherit -mb-0.5" />,
-      link: "/social-media/notification",
-      active: pathname === "/social-media/notification",
-    },
-    {
-      label: "Profile",
-      icon: <UserIcon className="size-7 fill-inherit -mb-0.5" />,
-      link: `/profile/${auth.id}`,
-      active: pathname === `/profile/${auth.id}`,
-    },
-  ];
-
   return (
     !isNavHidden() && (
-      <div className="flex z-[99] fixed w-full gap-4 justify-around items-end bottom-0 max-w-[478px] mx-auto shadow px-5 sm:px-9 py-3.5 bg-white border-y border-slate-300">
-        {navList.map((list, i) => (
-          <Link
-            key={i}
-            href={list.link}
-            className="flex flex-col items-center relative"
-          >
-            <span
-              className={clsx(
-                list.active ? "fill-[#009788]" : "fill-slate-400",
-              )}
-            >
-              {list.icon}
-            </span>
-            <span
-              className={clsx(
-                "text-xs mt-1",
-                list.active ? "text-black" : "text-slate-500",
-              )}
-            >
-              {list.label}
-            </span>
-          </Link>
-        ))}
+      <div className="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto border-t border-slate-200 bg-white px-0 py-0 flex justify-around items-center z-[99]">
+        <Link
+          href="/social-media"
+          className={`flex-1 flex flex-col items-center justify-center py-3 px-4 ${
+            pathname === "/social-media"
+              ? "text-teal-700 border-b-2 border-teal-700"
+              : "text-slate-400"
+          }`}
+        >
+          <HomeIcon className="size-6 mb-0.5" />
+          <span className="text-xs">Beranda</span>
+        </Link>
+        <Link
+          href="/social-media/liked"
+          className={`flex-1 flex flex-col items-center justify-center py-3 px-4 ${
+            pathname === "/social-media/liked"
+              ? "text-teal-700 border-b-2 border-teal-700"
+              : "text-slate-400"
+          }`}
+        >
+          <HeartOutlineIcon className="size-6 mb-0.5" />
+          <span className="text-xs">Disukai</span>
+        </Link>
+        <Link
+          href="/social-media/post/new"
+          className="flex-1 flex flex-col items-center justify-center py-3 px-4 text-teal-700"
+        >
+          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-teal-700 mb-0.5">
+            <PlusIcon className="size-6 text-white" />
+          </div>
+          <span className="text-xs">Posting</span>
+        </Link>
+        <Link
+          href="/social-media/chat"
+          className={`flex-1 flex flex-col items-center justify-center py-3 px-4 ${
+            pathname.startsWith("/social-media/chat")
+              ? "text-teal-700 border-b-2 border-teal-700"
+              : "text-slate-400"
+          }`}
+        >
+          <ChatBubbleLeftIcon className="size-6 mb-0.5" />
+          <span className="text-xs">Pesan</span>
+        </Link>
+        <Link
+          href={`/profile/${auth.id}`}
+          className={`flex-1 flex flex-col items-center justify-center py-3 px-4 ${
+            pathname === `/profile/${auth.id}`
+              ? "text-teal-700 border-b-2 border-teal-700"
+              : "text-slate-400"
+          }`}
+        >
+          <UserIcon className="size-6 mb-0.5" />
+          <span className="text-xs">Profil</span>
+        </Link>
       </div>
     )
   );

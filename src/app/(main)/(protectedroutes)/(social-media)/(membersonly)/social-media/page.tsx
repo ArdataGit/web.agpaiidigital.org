@@ -9,8 +9,7 @@ import "swiper/css/pagination";
 import Post from "@/components/post/post";
 import { useInView } from "react-intersection-observer";
 import { useAuth } from "@/utils/context/auth_context";
-import { MagnifyingGlassIcon, ChatBubbleLeftIcon, HomeIcon, HeartIcon as HeartOutlineIcon, UserIcon, BellIcon } from "@heroicons/react/24/outline";
-import { PlusIcon } from "@heroicons/react/24/solid";
+import { MagnifyingGlassIcon, BellIcon } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
 import { getImage } from "@/utils/function/function";
 
@@ -18,7 +17,6 @@ export default function SocialMedia() {
   const { ref, inView } = useInView();
   const { auth: user } = useAuth();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("beranda");
 
   // State untuk search dan modal
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -151,62 +149,6 @@ export default function SocialMedia() {
         </span>
       </div>
 
-      {/* Bottom Navigation Bar */}
-      <div className="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto border-t border-slate-200 bg-white px-0 py-0 flex justify-around items-center">
-        <Link
-          href="/social-media"
-          className={`flex-1 flex flex-col items-center justify-center py-3 px-4 ${
-            activeTab === "beranda"
-              ? "text-teal-700 border-b-2 border-teal-700"
-              : "text-slate-400"
-          }`}
-        >
-          <HomeIcon className="size-6 mb-0.5" />
-          <span className="text-xs">Beranda</span>
-        </Link>
-        <button
-          onClick={() => router.push("/social-media/liked")}
-          className={`flex-1 flex flex-col items-center justify-center py-3 px-4 ${
-            activeTab === "disukai"
-              ? "text-teal-700 border-b-2 border-teal-700"
-              : "text-slate-400"
-          }`}
-        >
-          <HeartOutlineIcon className="size-6 mb-0.5" />
-          <span className="text-xs">Disukai</span>
-        </button>
-        <Link
-          href="/social-media/post/new"
-          className="flex-1 flex flex-col items-center justify-center py-3 px-4 text-teal-700"
-        >
-          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-teal-700 mb-0.5">
-            <PlusIcon className="size-6 text-white" />
-          </div>
-          <span className="text-xs">Posting</span>
-        </Link>
-        <Link
-          href="/social-media/chat"
-          className={`flex-1 flex flex-col items-center justify-center py-3 px-4 ${
-            activeTab === "pesan"
-              ? "text-teal-700 border-b-2 border-teal-700"
-              : "text-slate-400"
-          }`}
-        >
-          <ChatBubbleLeftIcon className="size-6 mb-0.5" />
-          <span className="text-xs">Pesan</span>
-        </Link>
-        <Link
-          href="/profile"
-          className={`flex-1 flex flex-col items-center justify-center py-3 px-4 ${
-            activeTab === "profil"
-              ? "text-teal-700 border-b-2 border-teal-700"
-              : "text-slate-400"
-          }`}
-        >
-          <UserIcon className="size-6 mb-0.5" />
-          <span className="text-xs">Profil</span>
-        </Link>
-      </div>
       {isSearchOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white rounded-lg shadow-lg p-6 w-11/12 max-w-md">

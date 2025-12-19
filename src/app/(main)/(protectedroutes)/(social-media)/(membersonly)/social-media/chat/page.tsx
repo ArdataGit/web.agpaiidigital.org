@@ -18,8 +18,7 @@ import API from "@/utils/api/config";
 import { IUser, IConversation } from "@/types/chat";
 import { useAuth } from "@/utils/context/auth_context";
 import { db } from "../../../../../../../../firebase";
-import { MagnifyingGlassIcon, HomeIcon, HeartIcon as HeartOutlineIcon, ChatBubbleLeftIcon, UserIcon, PlusIcon } from "@heroicons/react/24/outline";
-import Link from "next/link";
+import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 
 export default function ChatIndex() {
 	const router = useRouter();
@@ -306,47 +305,6 @@ export default function ChatIndex() {
 						})}
 					</div>
 				)}
-			</div>
-
-			{/* BOTTOM NAVIGATION BAR */}
-			<div className="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto bg-white px-0 py-0 flex justify-around items-center">
-				<Link
-					href="/social-media"
-					className="flex-1 flex flex-col items-center justify-center py-3 px-4 text-slate-400"
-				>
-					<HomeIcon className="size-6 mb-0.5" />
-					<span className="text-xs">Beranda</span>
-				</Link>
-				<Link
-					href="/social-media/liked"
-					className="flex-1 flex flex-col items-center justify-center py-3 px-4 text-slate-400"
-				>
-					<HeartOutlineIcon className="size-6 mb-0.5" />
-					<span className="text-xs">Disukai</span>
-				</Link>
-				<Link
-					href="/social-media/post/new"
-					className="flex-1 flex flex-col items-center justify-center py-3 px-4 text-teal-700"
-				>
-					<div className="flex items-center justify-center w-10 h-10 rounded-full bg-teal-700 mb-0.5">
-						<PlusIcon className="size-6 text-white" />
-					</div>
-					<span className="text-xs">Posting</span>
-				</Link>
-				<Link
-					href="/social-media/chat"
-					className="flex-1 flex flex-col items-center justify-center py-3 px-4 text-teal-700"
-				>
-					<ChatBubbleLeftIcon className="size-6 mb-0.5" />
-					<span className="text-xs">Pesan</span>
-				</Link>
-				<Link
-					href="/profile"
-					className="flex-1 flex flex-col items-center justify-center py-3 px-4 text-slate-400"
-				>
-					<UserIcon className="size-6 mb-0.5" />
-					<span className="text-xs">Profil</span>
-				</Link>
 			</div>
 
 			{/* Pop-up Hapus Percakapan */}

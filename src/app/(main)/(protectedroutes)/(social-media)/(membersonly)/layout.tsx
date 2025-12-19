@@ -3,10 +3,7 @@ import SocialMediaNavbar from "@/components/nav/social_media_nav";
 import Navigate from "@/components/navigator/navigate";
 import { Status } from "@/constant/constant";
 import { useAuth } from "@/utils/context/auth_context";
-import {
-	getUserStatus,
-	isAllProfileCompleted,
-} from "@/utils/function/function";
+import { getUserStatus } from "@/utils/function/function";
 import { ReactNode } from "react";
 
 export default function Layout({ children }: { children: ReactNode }) {
