@@ -346,17 +346,16 @@ export default function Home() {
       {/* End Modal */}
       
       {/* Header */}
-      <div className="flex max-w-[480px] z-[996] top-0 left-0 right-0 bg-white px-8 py-6">
+      <div className="flex max-w-[480px] z-[996] top-0 left-0 right-0 bg-[#009788] px-8 py-6">
         <div className="flex items-center justify-between gap-x-8">
           <div className="flex items-center gap-2">
-            <img src="img/waving.png" alt="sapa" className="size-8 text-slate-600" />
+            <img src="/img/waving.png" alt="sapa" className="size-8 text-white" />
             <div className="pr-3 ml-2">
-              <p className="text-sm text-slate-500">Selamat Pagi</p>
-              <p className="text-md font-semibold text-slate-700">{auth.name}
-              </p>
+              <p className="text-sm text-gray-100">Selamat Pagi</p>
+              <p className="text-md font-semibold text-white">{auth.name}</p>
             </div>
           </div>
-          <Link href={"/profile/edit"} className="rounded-full size-fit ml-40">
+          <Link href={"/profile/edit"} className="rounded-full border-2 border-white size-fit ml-40">
             <img
               src={
                 (auth?.avatar !== null && getImage(auth.avatar)) ||
@@ -492,7 +491,6 @@ export default function Home() {
       <div className="px-4 py-6 bg-slate-50">
         <div className="flex items-center gap-2 mb-4">
           <h2 className="text-lg font-bold text-slate-700">Artikel</h2>
-          <img src="/img/document.png" alt="" className="size-5" />
         </div>
         <div className="grid grid-cols-2 gap-3">
           {articles?.length > 0 ? (
