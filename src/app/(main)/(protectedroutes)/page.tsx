@@ -74,19 +74,14 @@ export default function Home() {
   }, []);
   const menus: { label: string; link: string; icon: string }[] = [
     {
-      label: "Doa",
-      link: "/doa",
-      icon: "/svg/ikon doa.svg",
+      label: "Sosial Media",
+      link: "/social-media",
+      icon: "/svg/ikon-sosmed.svg",
     },
     {
-      label: "Al-Quran",
-      link: "/murrotal/surat",
-      icon: "/svg/ikon alquran.svg",
-    },
-    {
-      label: "Tasbih Digital",
-      link: "/tasbih",
-      icon: "/svg/tasbih.svg",
+      label: "KTA Digital",
+      link: "/kta",
+      icon: "/svg/ikon-kta.svg",
     },
     {
       label: "Arah Kiblat",
@@ -94,14 +89,19 @@ export default function Home() {
       icon: "/svg/ikon kabah.svg",
     },
     {
-      label: "Waktu Sholat",
-      link: "/waktu-sholat",
-      icon: "/svg/ikon solat.svg",
+      label: "Al-Qur'an",
+      link: "/murrotal/surat",
+      icon: "/svg/ikon alquran.svg",
     },
     {
       label: "Artikel",
       link: "/article",
       icon: "/svg/ikon koran.svg",
+    },
+    {
+      label: "Informasi Anggota",
+      link: "/member",
+      icon: "/svg/ikon-anggota.svg",
     },
     {
       label: "Acara",
@@ -346,13 +346,13 @@ export default function Home() {
       {/* End Modal */}
       
       {/* Header */}
-      <div className="flex max-w-[480px] z-[996] top-0 left-0 right-0 bg-[#009788] px-8 py-6">
+      <div className="flex max-w-[480px] z-[996] top-0 left-0 right-0 bg-fffff px-8 py-6">
         <div className="flex items-center justify-between gap-x-8">
           <div className="flex items-center gap-2">
-            <img src="/img/waving.png" alt="sapa" className="size-8 text-white" />
+            <img src="/img/wave.png" alt="sapa" className="size-8 text-white" />
             <div className="pr-3 ml-2">
-              <p className="text-sm text-gray-100">Selamat Pagi</p>
-              <p className="text-md font-semibold text-white">{auth.name}</p>
+              <p className="text-sm font-medium text-[#575757]">Assalamualaikum</p>
+              <p className="text-md font-bold text-[#006557]">{auth.name}</p>
             </div>
           </div>
           <Link href={"/profile/edit"} className="rounded-full border-2 border-white size-fit ml-40">
@@ -366,6 +366,85 @@ export default function Home() {
             />
           </Link>
         </div>
+      </div>
+
+      {/* Status Card */}
+      <div className="px-4 mt-2 mb-4">
+        {userStatus === Status.ACTIVE && (
+          <div className="bg-[#01B671] rounded-2xl p-2.5 shadow-md">
+            <div className="flex items-center gap-4">
+              <div className="bg-[#01925B] rounded-2xl p-3 flex-shrink-0">
+                <img src="/svg/iuran-aktif.svg" alt="Iuran Aktif" className="w-8 h-8" />
+              </div>
+              <div className="flex-1">
+                <p className="text-white font-semibold text-base mb-1">Sudah Membayar Iuran</p>
+                <p className="text-white font-medium text-sm">Kamu sekarang sudah memulai</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {userStatus === Status.INACTIVE && (
+          <div className="bg-[#E5553A] rounded-2xl p-2.5 shadow-md">
+            <div className="flex items-center gap-4">
+              <div className="bg-[#B8432E] rounded-2xl p-3 flex-shrink-0">
+                <img src="/svg/stop.svg" alt="Tidak Aktif" className="w-8 h-8" />
+              </div>
+              <div className="flex-1">
+                <p className="text-white font-semibold text-base mb-1">Akses Anda Ditolak</p>
+                <p className="text-white font-medium text-sm">Bayar iuran untuk mengaktifkan akun</p>
+              </div>
+              <button
+                onClick={togglePaymentModal}
+                className="bg-white text-red-600 px-4 py-2 rounded-md text-xs font-medium hover:bg-red-50 transition"
+              >
+                Bayar
+              </button>
+            </div>
+          </div>
+        )}
+
+        {userStatus === Status.EXPIRED && (
+          <div className="bg-[#FF8E0C] rounded-2xl p-2.5 shadow-md">
+            <div className="flex items-center gap-4">
+              <div className="bg-[#CC760C] rounded-2xl p-3 flex-shrink-0">
+                <img src="/svg/warning.svg" alt="Expired" className="w-8 h-8" />
+              </div>
+              <div className="flex-1">
+                <p className="text-white font-semibold text-base mb-1">Iuran Hampir Habis</p>
+                <p className="text-white font-medium text-sm">Perpanjang iuran Anda sekarang</p>
+              </div>
+              <button
+                onClick={togglePaymentModal}
+                className="bg-white text-orange-600 px-4 py-2 rounded-md text-xs font-medium hover:bg-orange-50 transition"
+              >
+                Perpanjang
+              </button>
+            </div>
+          </div>
+        )}
+
+        {userStatus === Status.PENDING && (
+          <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-4 shadow-md">
+            <div className="flex items-center gap-3">
+              <div className="bg-white/20 rounded-full p-2">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <p className="text-white font-semibold text-sm">Profil Belum Lengkap</p>
+                <p className="text-white/90 text-xs">Lengkapi profil untuk mendapatkan KTA</p>
+              </div>
+              <button
+                onClick={() => router.push("/profile/edit")}
+                className="bg-white text-blue-600 px-3 py-1.5 rounded-md text-xs font-medium hover:bg-blue-50 transition"
+              >
+                Lengkapi
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Menu Grid 3x3 */}

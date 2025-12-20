@@ -56,10 +56,7 @@ export default function LoginNikPage() {
               maxLength={16}
             />
           </div>
-        </div>
 
-        {/* Bottom Buttons */}
-        <div className="mt-auto pb-8 space-y-4">
           <button
             type="submit"
             disabled={loading}
@@ -67,6 +64,10 @@ export default function LoginNikPage() {
           >
             {loading ? "Loading..." : "Masuk"}
           </button>
+        </div>
+
+        {/* Bottom Buttons */}
+        <div className="mt-auto pb-8 space-y-4">
 
           {/* OR Divider */}
           <div className="flex items-center gap-4">

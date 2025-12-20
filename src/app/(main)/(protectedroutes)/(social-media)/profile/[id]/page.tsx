@@ -10,316 +10,379 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/utils/context/auth_context";
 import Loader from "@/components/loader/loader";
 import { getImage } from "@/utils/function/function";
-import { ArrowLeftIcon, PencilIcon, BuildingLibraryIcon, MapPinIcon } from "@heroicons/react/24/outline";
-import SocialMediaNavbar from "@/components/nav/social_media_nav";
+import {
+  ArrowLeftIcon,
+  HomeIcon,
+  HeartIcon as HeartOutlineIcon,
+  ChatBubbleLeftIcon,
+  UserIcon,
+  PlusIcon,
+  PencilIcon,
+  BuildingLibraryIcon,
+  MapPinIcon,
+} from "@heroicons/react/24/outline";
 
 function trimText(text: string, length: number) {
-	return text.length > length ? text.slice(0, length) + "..." : text;
+  return text.length > length ? text.slice(0, length) + "..." : text;
 }
 
 export default function Profile() {
-	const router = useRouter();
-	const { auth: auth } = useAuth();
-	const { id } = useParams();
-	const [postCount, setPostCount] = useState(0);
-	const [activeTab, setActiveTab] = useState<"foto" | "teks">("foto");
-	const { ref, inView } = useInView();
+  const router = useRouter();
+  const { auth: auth } = useAuth();
+  const { id } = useParams();
+  const [postCount, setPostCount] = useState(0);
+  const [activeTab, setActiveTab] = useState<"foto" | "teks">("foto");
+  const [navTab, setNavTab] = useState("profil");
+  const { ref, inView } = useInView();
 
-	/* ---------------- FETCH PROFILE ---------------- */
-	const { data: profile, isLoading: profileLoading } = useQuery({
-		queryKey: ["profile", id],
-		queryFn: async () => {
-			const res = await API.get(`user/${id}`);
-			if (res.status === 200) return res.data;
-		},
-	});
+  /* ---------------- FETCH PROFILE ---------------- */
+  const { data: profile, isLoading: profileLoading } = useQuery({
+    queryKey: ["profile", id],
+    queryFn: async () => {
+      const res = await API.get(`user/${id}`);
+      if (res.status === 200) return res.data;
+    },
+  });
 
-	/* ---------------- FETCH POSTS ---------------- */
-	const fetchPosts = async ({ pageParam }: { pageParam: number }) => {
-		const res = await API.get(`/user/${profile?.id}/post?page=${pageParam}`);
-		if (res.status === 200) {
-			setPostCount(res.data.total);
+  /* ---------------- FETCH POSTS ---------------- */
+  const fetchPosts = async ({ pageParam }: { pageParam: number }) => {
+    const res = await API.get(`/user/${profile?.id}/post?page=${pageParam}`);
+    if (res.status === 200) {
+      setPostCount(res.data.total);
 
-			return {
-				currentPage: pageParam,
-				data: res.data.data as PostType[],
-				nextPage:
-					res.data.next_page_url !== null
-						? parseInt(res.data.next_page_url.split("=")[1])
-						: undefined,
-			};
-		}
-	};
+      return {
+        currentPage: pageParam,
+        data: res.data.data as PostType[],
+        nextPage:
+          res.data.next_page_url !== null
+            ? parseInt(res.data.next_page_url.split("=")[1])
+            : undefined,
+      };
+    }
+  };
 
-	const {
-		data: posts,
-		isLoading,
-		isPending,
-		fetchNextPage,
-		isFetchingNextPage,
-	} = useInfiniteQuery({
-		enabled: !!profile,
-		queryKey: ["posts", id?.toString()],
-		queryFn: fetchPosts,
-		initialPageParam: 1,
-		getNextPageParam: (lastPage) => lastPage?.nextPage,
-	});
+  const {
+    data: posts,
+    isLoading,
+    isPending,
+    fetchNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    enabled: !!profile,
+    queryKey: ["posts", id?.toString()],
+    queryFn: fetchPosts,
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => lastPage?.nextPage,
+  });
 
-	useEffect(() => {
-		if (inView && !isFetchingNextPage) {
-			fetchNextPage();
-		}
-	}, [inView]);
+  useEffect(() => {
+    if (inView && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [inView]);
 
-	if (profileLoading) return null;
+  if (profileLoading) return null;
 
-	/* ---------------- EXTRACT YOUTUBE ID ---------------- */
-	function extractYoutubeId(url: string) {
-		if (!url) return null;
-		const patterns = [
-			/youtu\.be\/([^?&]+)/,
-			/youtube\.com\/watch\?v=([^?&]+)/,
-			/youtube\.com\/embed\/([^?&]+)/,
-		];
-		for (const p of patterns) {
-			const match = url.match(p);
-			if (match) return match[1];
-		}
-		return null;
-	}
+  /* ---------------- EXTRACT YOUTUBE ID ---------------- */
+  function extractYoutubeId(url: string) {
+    if (!url) return null;
+    const patterns = [
+      /youtu\.be\/([^?&]+)/,
+      /youtube\.com\/watch\?v=([^?&]+)/,
+      /youtube\.com\/embed\/([^?&]+)/,
+    ];
+    for (const p of patterns) {
+      const match = url.match(p);
+      if (match) return match[1];
+    }
+    return null;
+  }
 
-	return (
-		<div className="pb-28 bg-white min-h-screen">
-			{/* FIXED HEADER */}
-			<div className="fixed top-0 left-0 right-0 z-[99] max-w-[480px] mx-auto bg-teal-700 text-white px-4 py-4 flex items-center">
-				<button
-					onClick={() => router.back()}
-					className="p-1"
-				>
-					<ArrowLeftIcon className="size-6 text-white" />
-				</button>
-				<h1 className="font-semibold text-lg ml-3 flex-grow">Profil</h1>
-				{auth.id === profile?.id && (
-					<Link
-						className="text-sm bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg text-white transition flex items-center gap-1"
-						href={"/profile/edit/social-media"}
-					>
-						<PencilIcon className="size-4" />
-						Edit Profil
-					</Link>
-				)}
-			</div>
+  return (
+    <div className="pb-28 bg-white min-h-screen">
+      {/* FIXED HEADER */}
+      <div className="fixed top-0 left-0 right-0 z-[99] max-w-[480px] mx-auto bg-teal-700 text-white px-4 py-4 flex items-center">
+        <button onClick={() => router.back()} className="p-1">
+          <ArrowLeftIcon className="size-6 text-white" />
+        </button>
+        <h1 className="font-semibold text-lg ml-3 flex-grow">Profil</h1>
+        {auth.id === profile?.id && (
+          <Link
+            className="text-sm bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg text-white transition flex items-center gap-1"
+            href={"/profile/edit/social-media"}
+          >
+            <PencilIcon className="size-4" />
+            Edit Profil
+          </Link>
+        )}
+      </div>
 
-			<div className="pt-16">
-				{/* COVER IMAGE */}
-				<div className="relative">
-					<img
-						src={
-							(profile?.banner !== null && getImage(profile.banner.src)) ||
-							"/img/post.png"
-						}
-						alt="banner"
-						className="w-full h-40 object-cover"
-					/>
+      <div className="pt-16">
+        {/* COVER IMAGE */}
+        <div className="relative">
+          <img
+            src={
+              (profile?.banner !== null && getImage(profile.banner.src)) ||
+              "/img/post.png"
+            }
+            alt="banner"
+            className="w-full h-40 object-cover"
+          />
 
-					{/* PROFILE PICTURE - OVERLAPPING */}
-					<div className="flex justify-center -mt-16 relative z-10 px-4">
-						<div className="border-4 border-white rounded-full overflow-hidden bg-white">
-							<img
-								src={
-									(profile?.avatar !== null && getImage(profile.avatar)) ||
-									"https://avatar.iran.liara.run/public"
-								}
-								alt="avatar"
-								className="w-32 h-32 object-cover"
-							/>
-						</div>
-					</div>
-				</div>
+          {/* PROFILE PICTURE - OVERLAPPING */}
+          <div className="flex justify-start -mt-16 relative z-10 px-4">
+            <div className="border-4 border-white rounded-full overflow-hidden bg-white">
+              <img
+                src={
+                  (profile?.avatar !== null && getImage(profile.avatar)) ||
+                  "https://avatar.iran.liara.run/public"
+                }
+                alt="avatar"
+                className="w-32 h-32 object-cover"
+              />
+            </div>
+          </div>
+        </div>
 
-				{/* USER INFO SECTION */}
-				<div className="px-4 pt-6 pb-4">
-					{/* NAME */}
-					<h1 className="font-bold text-xl text-slate-900 text-center">{profile.name}</h1>
+        {/* USER INFO SECTION */}
+        <div className="px-4 pt-6 pb-4">
+          {/* NAME */}
+          <h1 className="font-bold text-xl text-slate-900">{profile.name}</h1>
 
-					{/* KTA & LOCATION */}
-					<div className="text-center text-sm text-slate-600 mt-1">
-						{profile?.kta_id && (
-							<p className="font-medium">No. KTA <span className="font-semibold text-[#009788]">{profile?.kta_id}</span></p>
-						)}
-						{profile?.profile.school_place && (
-							<div className="flex items-center justify-center gap-1 mt-1">
-								<BuildingLibraryIcon className="size-4 text-slate-600" />
-								<span>{profile.profile.school_place}</span>
-							</div>
-						)}
-						{profile?.profile.home_address && (
-							<div className="flex items-center justify-center gap-1 mt-1">
-								<MapPinIcon className="size-4 text-slate-600" />
-								<span>{profile.profile.home_address}</span>
-							</div>
-						)}
-					</div>
+          {/* KTA & LOCATION */}
+          <div className="text-sm text-slate-600 mt-1">
+            {profile?.kta_id && (
+              <p className="font-medium">
+                No. KTA{" "}
+                <span className="font-semibold text-[#009788]">
+                  {profile?.kta_id}
+                </span>
+              </p>
+            )}
+            {profile?.profile.school_place && (
+              <div className="flex items-center gap-1 mt-1">
+                <BuildingLibraryIcon className="size-4 text-slate-600" />
+                <span>{profile.profile.school_place}</span>
+              </div>
+            )}
+            {profile?.profile.home_address && (
+              <div className="flex items-center gap-1 mt-1">
+                <MapPinIcon className="size-4 text-slate-600" />
+                <span>{profile.profile.home_address}</span>
+              </div>
+            )}
+          </div>
 
-					{/* STATS SECTION */}
-					<div className="flex justify-around mt-6 py-4 border-t border-b border-slate-200">
-						<div className="text-center">
-							<p className="font-bold text-lg text-slate-900">{postCount}</p>
-							<p className="text-xs text-slate-500">Postingan</p>
-						</div>
-						<div className="text-center">
-							<p className="font-bold text-lg text-slate-900">0</p>
-							<p className="text-xs text-slate-500">Modul</p>
-						</div>
-						<div className="text-center">
-							<p className="font-bold text-lg text-slate-900">
-								{profile?.created_at.split("-")[0]}
-							</p>
-							<p className="text-xs text-slate-500">Bergabung</p>
-						</div>
-					</div>
+          {/* STATS SECTION */}
+          <div className="flex justify-around mt-6 py-4 border-t border-b border-slate-200">
+            <div className="text-center">
+              <p className="font-bold text-lg text-slate-900">{postCount}</p>
+              <p className="text-xs text-slate-500">Postingan</p>
+            </div>
+            <div className="text-center">
+              <p className="font-bold text-lg text-slate-900">0</p>
+              <p className="text-xs text-slate-500">Modul</p>
+            </div>
+            <div className="text-center">
+              <p className="font-bold text-lg text-slate-900">
+                {profile?.created_at.split("-")[0]}
+              </p>
+              <p className="text-xs text-slate-500">Bergabung</p>
+            </div>
+          </div>
 
-					{/* BIO SECTION */}
-					{profile?.profile.long_bio && (
-						<div className="mt-4">
-							<h3 className="font-semibold text-slate-900 text-sm mb-2">Bio</h3>
-							<p className="text-sm text-slate-600 leading-relaxed">
-								{profile?.profile.long_bio}
-							</p>
-						</div>
-					)}
-				</div>
+          {/* BIO SECTION */}
+          {profile?.profile.long_bio && (
+            <div className="mt-4">
+              <h3 className="font-semibold text-slate-900 text-sm mb-2">Bio</h3>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                {profile?.profile.long_bio}
+              </p>
+            </div>
+          )}
+        </div>
 
-				{/* TABS */}
-				<div className="flex border-b border-slate-200 px-4">
-					<button
-						onClick={() => setActiveTab("foto")}
-						className={`flex-1 py-3 font-medium text-sm border-b-2 transition ${
-							activeTab === "foto"
-								? "border-teal-600 text-teal-600"
-								: "border-transparent text-slate-600"
-						}`}
-					>
-						Postingan Foto
-					</button>
-					<button
-						onClick={() => setActiveTab("teks")}
-						className={`flex-1 py-3 font-medium text-sm border-b-2 transition ${
-							activeTab === "teks"
-								? "border-teal-600 text-teal-600"
-								: "border-transparent text-slate-600"
-						}`}
-					>
-						Postingan Teks
-					</button>
-				</div>
+        {/* TABS */}
+        <div className="flex border-b border-slate-200 px-4">
+          <button
+            onClick={() => setActiveTab("foto")}
+            className={`flex-1 py-3 font-medium text-sm border-b-2 transition ${
+              activeTab === "foto"
+                ? "border-teal-600 text-teal-600"
+                : "border-transparent text-slate-600"
+            }`}
+          >
+            Postingan Foto
+          </button>
+          <button
+            onClick={() => setActiveTab("teks")}
+            className={`flex-1 py-3 font-medium text-sm border-b-2 transition ${
+              activeTab === "teks"
+                ? "border-teal-600 text-teal-600"
+                : "border-transparent text-slate-600"
+            }`}
+          >
+            Postingan Teks
+          </button>
+        </div>
 
-				{/* POSTS GRID */}
-				<div className="grid grid-cols-3 gap-1">
-					{isPending || isLoading ? (
-						<div className="col-span-3 flex justify-center py-16">
-							<Loader className="size-8" />
-						</div>
-					) : (
-						posts?.pages.map((page: any, index) => (
-							<div key={index} className="contents">
-								{page?.data.length > 0 ? (
-									page?.data.map((post: any, i: number) => {
-										const youtubeId = extractYoutubeId(post.youtube_url);
-										const hasImage = post.images && post.images.length > 0;
-										const hasYoutube = !hasImage && youtubeId;
-										const hasDocument = !hasImage && !hasYoutube && post.document;
+        {/* POSTS GRID */}
+        <div className="grid grid-cols-3 gap-1">
+          {isPending || isLoading ? (
+            <div className="col-span-3 flex justify-center py-16">
+              <Loader className="size-8" />
+            </div>
+          ) : (
+            posts?.pages.map((page: any, index) => (
+              <div key={index} className="contents">
+                {page?.data.length > 0
+                  ? page?.data.map((post: any, i: number) => {
+                      const youtubeId = extractYoutubeId(post.youtube_url);
+                      const hasImage = post.images && post.images.length > 0;
+                      const hasYoutube = !hasImage && youtubeId;
+                      const hasDocument =
+                        !hasImage && !hasYoutube && post.document;
 
-										// Filter berdasarkan tab
-										if (activeTab === "foto" && !hasImage) return null;
-										if (activeTab === "teks" && (hasImage || hasYoutube || hasDocument)) return null;
+                      // Filter berdasarkan tab
+                      if (activeTab === "foto" && !hasImage) return null;
+                      if (
+                        activeTab === "teks" &&
+                        (hasImage || hasYoutube || hasDocument)
+                      )
+                        return null;
 
-										return (
-											<Link
-												key={i}
-												href={"/social-media/post/" + post.id}
-												className="aspect-square relative bg-slate-200 overflow-hidden hover:opacity-80 transition"
-											>
-												{/* IMAGE */}
-												{hasImage && (
-													<img
-														className="w-full h-full object-cover"
-														src={getImage(post.images[0].src)}
-													/>
-												)}
+                      return (
+                        <Link
+                          key={i}
+                          href={"/social-media/post/" + post.id}
+                          className="aspect-square relative bg-slate-200 overflow-hidden hover:opacity-80 transition"
+                        >
+                          {/* IMAGE */}
+                          {hasImage && (
+                            <img
+                              className="w-full h-full object-cover"
+                              src={getImage(post.images[0].src)}
+                            />
+                          )}
 
-												{/* YOUTUBE */}
-												{hasYoutube && (
-													<div className="w-full h-full relative">
-														<img
-															src={`https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`}
-															className="w-full h-full object-cover opacity-80"
-														/>
+                          {/* YOUTUBE */}
+                          {hasYoutube && (
+                            <div className="w-full h-full relative">
+                              <img
+                                src={`https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`}
+                                className="w-full h-full object-cover opacity-80"
+                              />
 
-														{/* PLAY ICON */}
-														<div className="absolute inset-0 flex items-center justify-center">
-															<div className="bg-white/80 rounded-full p-2">
-																<svg
-																	xmlns="http://www.w3.org/2000/svg"
-																	fill="black"
-																	viewBox="0 0 24 24"
-																	className="w-6 h-6"
-																>
-																	<path d="M8 5v14l11-7z" />
-																</svg>
-															</div>
-														</div>
+                              {/* PLAY ICON */}
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="bg-white/80 rounded-full p-2">
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="black"
+                                    viewBox="0 0 24 24"
+                                    className="w-6 h-6"
+                                  >
+                                    <path d="M8 5v14l11-7z" />
+                                  </svg>
+                                </div>
+                              </div>
 
-														{/* BADGE */}
-														<div className="absolute bottom-1 left-1 bg-red-600 text-white text-[10px] px-2 py-0.5 rounded-sm">
-															YouTube
-														</div>
-													</div>
-												)}
+                              {/* BADGE */}
+                              <div className="absolute bottom-1 left-1 bg-red-600 text-white text-[10px] px-2 py-0.5 rounded-sm">
+                                YouTube
+                              </div>
+                            </div>
+                          )}
 
-												{/* DOCUMENT BADGE */}
-												{hasDocument && (
-													<div className="w-full h-full flex items-center justify-center bg-slate-600 text-white text-xs p-2 text-center">
-														<div className="flex flex-col items-center gap-1">
-															<span className="text-lg">📄</span>
-															<span className="text-[9px] truncate px-1 line-clamp-2">
-																{post.document.split("/").pop()}
-															</span>
-														</div>
-													</div>
-												)}
+                          {/* DOCUMENT BADGE */}
+                          {hasDocument && (
+                            <div className="w-full h-full flex items-center justify-center bg-slate-600 text-white text-xs p-2 text-center">
+                              <div className="flex flex-col items-center gap-1">
+                                <span className="text-lg">📄</span>
+                                <span className="text-[9px] truncate px-1 line-clamp-2">
+                                  {post.document.split("/").pop()}
+                                </span>
+                              </div>
+                            </div>
+                          )}
 
-												{/* TEXT ONLY */}
-												{!hasImage && !hasYoutube && !hasDocument && (
-													<div
-														style={{ backgroundImage: "url(/img/post.png)" }}
-														className="bg-cover bg-center w-full h-full flex px-4 py-4 text-center"
-													>
-														<p className="text-xs text-white m-auto break-words line-clamp-3">
-															{trimText(post.body, 50)}
-														</p>
-													</div>
-												)}
-											</Link>
-										);
-									})
-								) : null}
-							</div>
-						))
-					)}
-				</div>
+                          {/* TEXT ONLY */}
+                          {!hasImage && !hasYoutube && !hasDocument && (
+                            <div
+                              style={{ backgroundImage: "url(/img/post.png)" }}
+                              className="bg-cover bg-center w-full h-full flex px-4 py-4 text-center"
+                            >
+                              <p className="text-xs text-white m-auto break-words line-clamp-3">
+                                {trimText(post.body, 50)}
+                              </p>
+                            </div>
+                          )}
+                        </Link>
+                      );
+                    })
+                  : null}
+              </div>
+            ))
+          )}
+        </div>
 
-				{/* EMPTY STATE */}
-				{!isPending && !isLoading && posts?.pages[0]?.data.length === 0 && (
-					<div className="p-4 w-full text-center pt-16 text-slate-600">
-						Tidak Ada Postingan
-					</div>
-				)}
-				<div ref={ref}></div>
-			</div>
+        {/* EMPTY STATE */}
+        {!isPending && !isLoading && posts?.pages[0]?.data.length === 0 && (
+          <div className="p-4 w-full text-center pt-16 text-slate-600">
+            Tidak Ada Postingan
+          </div>
+        )}
+        <div ref={ref}></div>
+      </div>
 
-			{/* Bottom Navigation */}
-			<SocialMediaNavbar />
-		</div>
-	);
+      {/* Bottom Navigation Bar */}
+      <div className="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto  bg-white px-0 py-0 flex justify-around items-center">
+        <Link
+          href="/social-media"
+          className={`flex-1 flex flex-col items-center justify-center py-3 px-4 ${
+            navTab === "beranda" ? "text-teal-700" : "text-slate-400"
+          }`}
+        >
+          <HomeIcon className="size-6 mb-0.5" />
+          <span className="text-xs">Beranda</span>
+        </Link>
+        <button
+          onClick={() => router.push("/social-media/liked")}
+          className={`flex-1 flex flex-col items-center justify-center py-3 px-4 ${
+            navTab === "disukai" ? "text-teal-700" : "text-slate-400"
+          }`}
+        >
+          <HeartOutlineIcon className="size-6 mb-0.5" />
+          <span className="text-xs">Disukai</span>
+        </button>
+        <Link
+          href="/social-media/post/new"
+          className="flex-1 flex flex-col items-center justify-center py-3 px-4 text-teal-700"
+        >
+          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-teal-700 mb-0.5">
+            <PlusIcon className="size-6 text-white" />
+          </div>
+          <span className="text-xs">Posting</span>
+        </Link>
+        <Link
+          href="/social-media/chat"
+          className={`flex-1 flex flex-col items-center justify-center py-3 px-4 ${
+            navTab === "pesan" ? "text-teal-700" : "text-slate-400"
+          }`}
+        >
+          <ChatBubbleLeftIcon className="size-6 mb-0.5" />
+          <span className="text-xs">Pesan</span>
+        </Link>
+        <Link
+          href="/profile"
+          className={`flex-1 flex flex-col items-center justify-center py-3 px-4 ${
+            navTab === "profil" ? "text-teal-700 " : "text-slate-400"
+          }`}
+        >
+          <UserIcon className="size-6 mb-0.5" />
+          <span className="text-xs">Profil</span>
+        </Link>
+      </div>
+    </div>
+  );
 }

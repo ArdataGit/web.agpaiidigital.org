@@ -43,7 +43,7 @@ export default function LoginEmailPage() {
 
       {/* Main Content */}
       <form onSubmit={handleSubmit(submit as any)} className="flex-1 flex flex-col px-6 pt-8">
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Email Input */}
           <div>
             <label className="block text-gray-700 font-medium mb-2">
@@ -77,10 +77,7 @@ export default function LoginEmailPage() {
               Atur ulang
             </Link>
           </div>
-        </div>
 
-        {/* Bottom Buttons */}
-        <div className="mt-auto pb-8 space-y-4">
           <button
             type="submit"
             disabled={loading}
@@ -88,6 +85,10 @@ export default function LoginEmailPage() {
           >
             {loading ? "Loading..." : "Masuk"}
           </button>
+        </div>
+
+        {/* Bottom Buttons */}
+        <div className="mt-auto pb-8 space-y-4">
 
           {/* OR Divider */}
           <div className="flex items-center gap-4">

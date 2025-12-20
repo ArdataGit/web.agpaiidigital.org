@@ -304,17 +304,6 @@ export default function Register() {
 					>
 						{isPending ? "Loading..." : "Bergabung Sekarang"}
 					</button>
-
-				<p className="text-md text-slate-500 text-center mt-2">
-				Sudah mempunyai akun?{" "}
-				<span>
-					<Link
-						className="text-blue-500"
-						href={"/getting-started"}>
-						Login
-					</Link>
-				</span>{" "}
-			</p>
 				</div>
 			</form>
 		</div>
