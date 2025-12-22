@@ -122,7 +122,7 @@ export default function LoginNikPage() {
 
           <Link
             href="/auth/register"
-            className="block w-full py-4 bg-[#2C2C2C] text-white font-medium rounded-full text-center hover:bg-[#1a1a1a] transition"
+            className="block w-full py-4 bg-[#01925B] text-white font-medium rounded-full text-center hover:bg-[#1a1a1a] transition"
           >
             Daftar Akun
           </Link>
