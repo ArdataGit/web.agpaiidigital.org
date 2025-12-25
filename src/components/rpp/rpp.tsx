@@ -1,6 +1,7 @@
 import { getImage } from "@/utils/function/function";
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 
 const getEducationalLevel = (number: string | number) => {
 	switch (parseInt(number as string)) {
@@ -29,18 +30,22 @@ const getEducationalLevel = (number: string | number) => {
 };
 
 export default function Rpp({ rpp }: { rpp: any }) {
+	const [imageError, setImageError] = useState(false);
+	const imageSrc = rpp.image !== null && !imageError 
+		? getImage(rpp.image) 
+		: "/img/agpaii_splash.svg";
+
 	return (
 		<Link
 			href={`/rpp/${rpp.id}`}
-			className="border border-slate-200 px-4 py-3 rounded-md flex gap-3">
-			<div className="aspect-square overflow-hidden min-w-28 min-h-28 size-28 rounded-md">
+			className="px-4 py-3 flex gap-3 hover:bg-gray-50 transition-colors">
+			<div className="aspect-square overflow-hidden min-w-28 min-h-28 size-28 rounded-md relative">
 				<Image
 					fill
 					alt={rpp.topic}
-					src={
-						rpp.image !== null ? getImage(rpp.image) : "/img/agpaii_splash.svg"
-					}
-					className="size-full"
+					src={imageSrc}
+					className="size-full object-cover"
+					onError={() => setImageError(true)}
 				/>
 			</div>
 			<div className="flex flex-col">
