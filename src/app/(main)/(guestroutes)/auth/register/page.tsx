@@ -39,7 +39,9 @@ export default function Register() {
 				.refine((string) => !isNaN(Number(string)), { message: "NIK harus berupa angka" }),
 			password: z.string().min(8, { message: "Password Anda harus berisi setidaknya 8 huruf, angka atau simbol." }),
 			password_confirmation: z.string(),
-			role_id: z.string().refine((string) => parseFloat(string), {
+			role_id: z.string().min(1, {
+				message: "Anda harus memilih role",
+			}).refine((value) => !isNaN(Number(value)), {
 				message: "Anda harus memilih role",
 			}),
 		})
@@ -77,10 +79,19 @@ export default function Register() {
 	const {
 		register,
 		handleSubmit,
-
+		setValue,
 		formState: { errors },
 	} = useForm<FormFields>({
 		resolver: zodResolver(userSchema),
+		defaultValues: {
+			name: "",
+			email: "",
+			no_hp: "",
+			nik: "",
+			password: "",
+			password_confirmation: "",
+			role_id: "",
+		},
 	});
 	return (
 		<div className="min-h-screen bg-white flex flex-col">
@@ -266,18 +277,15 @@ export default function Register() {
 							Daftar Sebagai
 						</label>
 						<div className="relative">
-							{/* Hidden input for form validation */}
-							<input
-								type="hidden"
-								{...register("role_id")}
-								value={selectedRole?.value || ""}
-							/>
-							
 							{/* Custom Dropdown Button */}
 							<button
 								type="button"
 								onClick={() => setIsRoleDropdownOpen(!isRoleDropdownOpen)}
-								className="w-full px-4 py-3 border-2 border-[#00AF70] rounded-lg focus:outline-none focus:border-[#00AF70] text-left bg-white flex items-center justify-between"
+								className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none text-left bg-white flex items-center justify-between transition ${
+									errors.role_id 
+										? "border-red-500 focus:border-red-500" 
+										: "border-[#00AF70] focus:border-[#00AF70]"
+								}`}
 							>
 								<span className={selectedRole ? "text-gray-700" : "text-gray-400"}>
 									{selectedRole ? selectedRole.name : "Pilih Role"}
@@ -323,6 +331,10 @@ export default function Register() {
 											type="button"
 											onClick={() => {
 												setSelectedRole(option);
+												setValue("role_id", option.value.toString(), { 
+													shouldValidate: true,
+													shouldDirty: true 
+												});
 												setIsRoleDropdownOpen(false);
 											}}
 											className={`w-full px-4 py-3 text-left hover:bg-[#00AF70] hover:bg-opacity-10 transition ${

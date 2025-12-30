@@ -76,11 +76,16 @@ export default function RppDigitalPage() {
     getNextPageParam: (lastPage) => lastPage?.nextPage,
   });
   
-  const { ref, inView } = useInView();
+  const { ref, inView } = useInView({
+    threshold: 0,
+    rootMargin: '100px', // Trigger 100px sebelum sampai ke bottom
+  });
 
   useEffect(() => {
-    if (inView && !isFetchingNextPage) fetchNextPage();
-  }, [inView]);
+    if (inView && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [inView, isFetchingNextPage, fetchNextPage]);
 
   // Filter RPP based on search and grade
   const filteredRpps = rpps?.pages.map(page => ({
