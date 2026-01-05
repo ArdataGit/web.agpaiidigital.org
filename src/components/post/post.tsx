@@ -54,7 +54,9 @@ export default function Post({ post, onImageClick }: { post: PostType; onImageCl
   // Delete state
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deletePending, setDeletePending] = useState(false);
+  const [isLiking, setIsLiking] = useState(false);
   const youtubeId = getYoutubeId(post.youtube_url || "");
+  
   const handlelikeUnlikePost = async () => {
     try {
       const originalIsLiked = post.is_liked;
@@ -66,14 +68,30 @@ export default function Post({ post, onImageClick }: { post: PostType; onImageCl
       post.is_liked = originalIsLiked;
     } catch {
       post.is_liked = !post.is_liked;
+      throw new Error("API Error");
     }
   };
-  const { mutate: likeUnlikePost, isPending } = useMutation({
+  
+  const { mutate: likeUnlikePost } = useMutation({
     mutationFn: handlelikeUnlikePost,
-    onSuccess: async () => {
-      await queryClient.refetchQueries({ queryKey: ["posts"] });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
+      setIsLiking(false);
+    },
+    onError: () => {
+      setIsLiking(false);
     },
   });
+
+  const handleLikeClick = () => {
+    if (isLiking) {
+      toast.info("Tekan like sekali lagi");
+      return;
+    }
+    setIsLiking(true);
+    likeUnlikePost();
+  };
+
   // Delete mutation
   const handleDeletePost = async () => {
     if (!user || post.author_id !== user.id) return;
@@ -249,18 +267,14 @@ export default function Post({ post, onImageClick }: { post: PostType; onImageCl
         <div className="flex items-center justify-between pb-2 pt-4 px-1">
           {/* LEFT: Like & Comment */}
           <div className="flex gap-4 items-center *:cursor-pointer">
-            <span onClick={likeUnlikePost as any}>
-              {isPending ? (
-                <Loader className="size-7" />
-              ) : (
-                <div className="flex gap-1.5 items-center">
-                  {post.is_liked ? (
-                    <HeartSolidIcon className="fill-red-700 size-7" />
-                  ) : (
-                    <HeartIcon className="text-slate-500 size-7" />
-                  )}
-                </div>
-              )}
+            <span onClick={handleLikeClick}>
+              <div className="flex gap-1.5 items-center">
+                {post.is_liked ? (
+                  <HeartSolidIcon className="fill-red-700 size-7" />
+                ) : (
+                  <HeartIcon className="text-slate-500 size-7" />
+                )}
+              </div>
             </span>
 
             <Link

@@ -18,6 +18,11 @@ export interface Post {
 	last_like: null | string;
 	last_comment: null | string;
 	is_pinned: boolean | number;
+	// Additional properties
+	youtube_url?: string;
+	full_image?: string;
+	document?: string;
+	product_id?: number;
 }
 
 type Image = {

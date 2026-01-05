@@ -86,15 +86,29 @@ export default function DetailPost() {
   });
 
   /* ---------------- COMMENT POST ---------------- */
-  const { mutate: commentPost, isPending: commentPending } = useMutation({
-    mutationFn: async () => {
-      const res = await API.post(`/post/${id}/comment`, { comment });
-      if (res.status === 200) return true;
+  const [isSending, setIsSending] = useState(false);
+  
+  const { mutate: commentPost } = useMutation({
+    mutationFn: async (commentText: string) => {
+      const res = await API.post(`/post/${id}/comment`, { comment: commentText });
+      if (res.status === 200) return res.data;
+      throw new Error("Failed to post comment");
     },
-    onSuccess: async () => {
-      await queryClient.refetchQueries({ queryKey: ["post", id] });
+    onMutate: () => {
+      // Show sending state briefly
+      setIsSending(true);
+    },
+    onSuccess: () => {
       toast.success("Berhasil post Komentar");
       setComment("");
+      // Silently sync in background
+      queryClient.invalidateQueries({ queryKey: ["post", id] });
+    },
+    onError: () => {
+      toast.error("Gagal mengirim komentar");
+    },
+    onSettled: () => {
+      setIsSending(false);
     },
   });
 
@@ -167,7 +181,9 @@ export default function DetailPost() {
           method="POST"
           onSubmit={(e) => {
             e.preventDefault();
-            commentPost();
+            if (comment.trim() && !isSending) {
+              commentPost(comment);
+            }
           }}
           className="fixed bg-white bottom-0 max-w-[478.5px] py-3 w-full px-4 border-t border-slate-300 flex gap-4"
         >
@@ -177,19 +193,20 @@ export default function DetailPost() {
             type="text"
             className="px-4 py-2 border border-dashed border-slate-400 rounded-full text-sm flex-grow"
             placeholder="Tulis Komentar"
+            disabled={isSending}
           />
           <button
             type="submit"
+            disabled={!comment.trim() || isSending}
             className={clsx(
-              "ms-auto p-2 rounded-full",
-              commentPending ? "bg-white" : "bg-[#009788]"
+              "ms-auto p-2 rounded-full transition-all active:scale-90",
+              !comment.trim() || isSending ? "bg-slate-300" : "bg-[#009788]"
             )}
           >
-            {commentPending ? (
-              <Loader className="size-6" />
-            ) : (
-              <PaperAirplaneIcon className="size-5 text-white" />
-            )}
+            <PaperAirplaneIcon className={clsx(
+              "size-5",
+              !comment.trim() || isSending ? "text-slate-500" : "text-white"
+            )} />
           </button>
         </form>
         {/* LOADING */}
