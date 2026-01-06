@@ -35,11 +35,11 @@ export default function GettingStarted() {
       {/* Image Tasbih */}
       <div className="flex justify-end items-center py-0 pr-0 flex-shrink-0">
         <motion.div 
-          className="w-[240px] sm:w-[200px] md:w-[240px]"
+          className="w-[180px] sm:w-[160px] md:w-[200px]"
           initial={{ x: 100, y: 100, opacity: 0 }}
           animate={{ 
             x: 0, 
-            y: [0, -15, 0],
+            y: [0, -12, 0],
             opacity: 1 
           }}
           transition={{
@@ -63,7 +63,7 @@ export default function GettingStarted() {
 
       {/* Main Content */}
       <motion.div 
-        className="flex flex-col items-center justify-center px-3 sm:px-6 pb-6 pt-2 sm:pt-2 flex-1"
+        className="flex flex-col items-center justify-center px-3 sm:px-6 pb-6 pt-0 sm:pt-0 flex-1 -mt-4"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}

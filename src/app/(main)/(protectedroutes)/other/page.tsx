@@ -33,6 +33,7 @@ export default function OthersMenuPage() {
 			title: "Edukasi",
 			icon: "/svg/icon-book.svg",
 			items: [
+				{ label: "Baca Buku", icon: "/svg/ikon-baca-buku.svg", link: "/baca-buku" },
 				{ label: "Ruang Guru", icon: "/svg/ikon guru.svg", link: "/ruang-guru" },
 				{ label: "Perangkat Ajar", icon: "/svg/ikon perangkat.svg", link: "/perangkat-ajar" },
 				{ label: "RPP Digital", icon: "/svg/ikon-rpp.svg", link: "/rpp" },
