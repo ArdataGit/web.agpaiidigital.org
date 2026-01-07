@@ -6,71 +6,257 @@
 // Role ID untuk siswa
 export const STUDENT_ROLE_ID = 12;
 
-// Mock materi kelas
-export const MOCK_MATERIALS = [
+// Interface untuk materi
+export interface Material {
+  id: number;
+  title: string;
+  description: string;
+  content: string; // Full content/summary
+  type: "pdf" | "video";
+  fileUrl: string;
+  duration: string; // e.g. "15 menit"
+  chapters?: string[];
+  createdAt: string;
+}
+
+// Mock materi kelas dengan detail
+export const MOCK_MATERIALS: Material[] = [
   {
     id: 1,
     title: "Pengenalan Al-Quran",
     description: "Belajar dasar-dasar membaca Al-Quran dengan tajwid yang benar",
+    content: "Materi ini membahas tentang sejarah turunnya Al-Quran, keutamaan membaca Al-Quran, dan pengenalan huruf hijaiyah. Siswa akan mempelajari cara membaca dengan tartil dan memahami makna-makna dasar dalam Al-Quran.",
     type: "pdf",
     fileUrl: "/materials/al-quran-intro.pdf",
+    duration: "30 menit",
+    chapters: ["Sejarah Al-Quran", "Keutamaan Membaca", "Huruf Hijaiyah", "Tanda Baca"],
     createdAt: "2026-01-05",
   },
   {
     id: 2,
     title: "Sejarah Nabi Muhammad SAW",
     description: "Mempelajari perjalanan hidup Rasulullah SAW dari lahir hingga wafat",
+    content: "Video pembelajaran tentang kelahiran Nabi Muhammad SAW, masa kecil, pengangkatan menjadi rasul, hijrah ke Madinah, dan perjuangan dakwah hingga wafat. Dilengkapi dengan ilustrasi dan penjelasan detail.",
     type: "video",
-    fileUrl: "https://youtube.com/watch?v=example",
+    fileUrl: "https://www.youtube.com/embed/4zLfCnGVeL4",
+    duration: "45 menit",
+    chapters: ["Kelahiran", "Masa Kecil", "Pengangkatan Rasul", "Hijrah", "Wafat"],
     createdAt: "2026-01-03",
   },
   {
     id: 3,
     title: "Rukun Islam",
     description: "Memahami 5 rukun Islam dan implementasinya dalam kehidupan sehari-hari",
+    content: "Materi lengkap tentang 5 rukun Islam: Syahadat, Shalat, Zakat, Puasa, dan Haji. Setiap rukun dijelaskan secara detail beserta tata cara pelaksanaan dan hikmahnya.",
     type: "pdf",
     fileUrl: "/materials/rukun-islam.pdf",
+    duration: "25 menit",
+    chapters: ["Syahadat", "Shalat", "Zakat", "Puasa", "Haji"],
     createdAt: "2026-01-01",
+  },
+  {
+    id: 4,
+    title: "Hukum Tajwid",
+    description: "Mempelajari hukum-hukum bacaan dalam Al-Quran",
+    content: "Materi ini membahas berbagai hukum tajwid seperti Idzhar, Idgham, Iqlab, dan Ikhfa. Dilengkapi dengan contoh-contoh ayat dan latihan pengucapan yang benar.",
+    type: "pdf",
+    fileUrl: "/materials/tajwid.pdf",
+    duration: "40 menit",
+    chapters: ["Idzhar", "Idgham", "Iqlab", "Ikhfa", "Qalqalah"],
+    createdAt: "2025-12-28",
   },
 ];
 
-// Mock latihan soal
-export const MOCK_EXERCISES = [
+// Interface untuk latihan soal
+export interface Exercise {
+  id: number;
+  title: string;
+  description: string;
+  totalQuestions: number;
+  duration: number; // menit
+  deadline: string;
+  isCompleted: boolean;
+  score?: number;
+  questions?: Question[];
+}
+
+export interface Question {
+  id: number;
+  question: string;
+  options: string[];
+  correctAnswer: number; // index of correct option
+}
+
+// Mock latihan soal dengan detail
+export const MOCK_EXERCISES: Exercise[] = [
   {
     id: 1,
     title: "Latihan Tajwid Dasar",
-    totalQuestions: 20,
-    duration: 30, // menit
+    description: "Uji pemahaman tentang hukum-hukum tajwid dasar",
+    totalQuestions: 5,
+    duration: 10,
     deadline: "2026-01-15",
     isCompleted: false,
+    questions: [
+      {
+        id: 1,
+        question: "Apa yang dimaksud dengan hukum Idzhar?",
+        options: [
+          "Membaca dengan jelas tanpa dengung",
+          "Membaca dengan dengung",
+          "Membaca dengan melebur",
+          "Membaca dengan membalik"
+        ],
+        correctAnswer: 0
+      },
+      {
+        id: 2,
+        question: "Huruf-huruf Idzhar Halqi adalah...",
+        options: [
+          "ب ت ث",
+          "ء ه ع ح غ خ",
+          "ي ر م ل و ن",
+          "ق ط ب ج د"
+        ],
+        correctAnswer: 1
+      },
+      {
+        id: 3,
+        question: "Idgham Bighunnah terjadi ketika Nun Mati bertemu huruf...",
+        options: [
+          "ل ر",
+          "ب",
+          "ي ن م و",
+          "ء ه ع ح غ خ"
+        ],
+        correctAnswer: 2
+      },
+      {
+        id: 4,
+        question: "Hukum Iqlab terjadi ketika Nun Mati bertemu huruf...",
+        options: [
+          "ب",
+          "ل",
+          "ر",
+          "م"
+        ],
+        correctAnswer: 0
+      },
+      {
+        id: 5,
+        question: "Berapa lama panjang bacaan Mad Wajib Muttashil?",
+        options: [
+          "1 alif",
+          "2-3 alif",
+          "4-5 alif",
+          "6 alif"
+        ],
+        correctAnswer: 2
+      }
+    ]
   },
   {
     id: 2,
     title: "Quiz Sejarah Islam",
-    totalQuestions: 15,
-    duration: 25,
+    description: "Evaluasi pengetahuan tentang sejarah Nabi Muhammad SAW",
+    totalQuestions: 5,
+    duration: 10,
     deadline: "2026-01-10",
     isCompleted: true,
     score: 85,
+    questions: [
+      {
+        id: 1,
+        question: "Nabi Muhammad SAW lahir pada tahun...",
+        options: ["570 M", "571 M", "572 M", "573 M"],
+        correctAnswer: 0
+      },
+      {
+        id: 2,
+        question: "Siapa nama ibu Nabi Muhammad SAW?",
+        options: ["Halimah", "Aminah", "Khadijah", "Fatimah"],
+        correctAnswer: 1
+      },
+      {
+        id: 3,
+        question: "Di gua manakah Nabi Muhammad menerima wahyu pertama?",
+        options: ["Gua Tsur", "Gua Hira", "Gua Kahfi", "Gua Ashabul"],
+        correctAnswer: 1
+      },
+      {
+        id: 4,
+        question: "Peristiwa Hijrah terjadi pada tahun...",
+        options: ["620 M", "621 M", "622 M", "623 M"],
+        correctAnswer: 2
+      },
+      {
+        id: 5,
+        question: "Siapa sahabat yang menemani Nabi saat Hijrah?",
+        options: ["Umar bin Khattab", "Abu Bakar", "Ali bin Abi Thalib", "Utsman bin Affan"],
+        correctAnswer: 1
+      }
+    ]
   },
   {
     id: 3,
     title: "Evaluasi Rukun Islam",
-    totalQuestions: 25,
-    duration: 45,
+    description: "Tes pemahaman tentang 5 rukun Islam dan implementasinya",
+    totalQuestions: 5,
+    duration: 15,
     deadline: "2026-01-20",
     isCompleted: false,
+    questions: [
+      {
+        id: 1,
+        question: "Rukun Islam yang pertama adalah...",
+        options: ["Shalat", "Syahadat", "Zakat", "Puasa"],
+        correctAnswer: 1
+      },
+      {
+        id: 2,
+        question: "Berapa rakaat shalat Maghrib?",
+        options: ["2 rakaat", "3 rakaat", "4 rakaat", "5 rakaat"],
+        correctAnswer: 1
+      },
+      {
+        id: 3,
+        question: "Zakat fitrah wajib dikeluarkan sebelum...",
+        options: ["Shalat Idul Fitri", "Shalat Tarawih", "Puasa Ramadhan", "Malam Lailatul Qadar"],
+        correctAnswer: 0
+      },
+      {
+        id: 4,
+        question: "Puasa Ramadhan dilakukan selama...",
+        options: ["1 minggu", "2 minggu", "29-30 hari", "40 hari"],
+        correctAnswer: 2
+      },
+      {
+        id: 5,
+        question: "Haji wajib dilaksanakan bagi muslim yang...",
+        options: ["Sudah dewasa", "Mampu", "Laki-laki", "Bekerja"],
+        correctAnswer: 1
+      }
+    ]
   },
 ];
 
 // Mock diskusi kelas
+export interface Reply {
+  id: number;
+  authorName: string;
+  authorAvatar: string | null;
+  content: string;
+  createdAt: string;
+}
+
 export interface Discussion {
   id: number;
   authorName: string;
   authorAvatar: string | null;
   content: string;
   createdAt: string;
-  replies: number;
+  repliesCount: number;
+  repliesData?: Reply[];
   images?: string[]; // Array of image URLs
   video?: string; // Video URL (YouTube embed)
 }
@@ -82,10 +268,33 @@ export const MOCK_DISCUSSIONS: Discussion[] = [
     authorAvatar: null,
     content: "Bagaimana cara membedakan hukum bacaan idzhar dan ikhfa? Berikut contoh tulisannya yang saya foto dari buku tajwid.",
     createdAt: "2026-01-06 10:30",
-    replies: 5,
+    repliesCount: 5,
+    repliesData: [
+      {
+        id: 1,
+        authorName: "Ustadz Hasan",
+        authorAvatar: null,
+        content: "Idzhar dibaca jelas tanpa dengung, sedangkan ikhfa dibaca samar dengan dengung. Idzhar terjadi jika nun mati bertemu huruf halqi (ء ه ع ح غ خ).",
+        createdAt: "2026-01-06 11:00",
+      },
+      {
+        id: 2,
+        authorName: "Fatimah",
+        authorAvatar: null,
+        content: "Terima kasih Ustadz, sekarang saya jadi lebih paham perbedaannya!",
+        createdAt: "2026-01-06 11:15",
+      },
+      {
+        id: 3,
+        authorName: "Muhammad",
+        authorAvatar: null,
+        content: "Untuk ikhfa, cirinya ada dengung sekitar 2 harakat ya Ustadz?",
+        createdAt: "2026-01-06 11:30",
+      },
+    ],
     images: [
-      "https://picsum.photos/seed/quran1/400/300",
-      "https://picsum.photos/seed/tajwid1/400/300",
+      "https://placehold.co/400x300/e8f5e9/2e7d32?text=Tajwid+1",
+      "https://placehold.co/400x300/e3f2fd/1565c0?text=Tajwid+2",
     ],
   },
   {
@@ -94,7 +303,37 @@ export const MOCK_DISCUSSIONS: Discussion[] = [
     authorAvatar: null,
     content: "Apa hikmah dari puasa Ramadhan yang bisa kita ambil? Simak video penjelasan dari Ustadz berikut ini.",
     createdAt: "2026-01-05 14:15",
-    replies: 8,
+    repliesCount: 8,
+    repliesData: [
+      {
+        id: 1,
+        authorName: "Aisyah",
+        authorAvatar: null,
+        content: "Puasa mengajarkan kita kesabaran dan empati terhadap orang yang kurang mampu.",
+        createdAt: "2026-01-05 14:30",
+      },
+      {
+        id: 2,
+        authorName: "Umar",
+        authorAvatar: null,
+        content: "Setuju! Puasa juga melatih pengendalian diri kita dalam berbagai hal.",
+        createdAt: "2026-01-05 14:45",
+      },
+      {
+        id: 3,
+        authorName: "Ahmad",
+        authorAvatar: null,
+        content: "Video-nya sangat bermanfaat, terima kasih sudah berbagi!",
+        createdAt: "2026-01-05 15:00",
+      },
+      {
+        id: 4,
+        authorName: "Bu Siti",
+        authorAvatar: null,
+        content: "Bagus sekali diskusinya. Puasa juga mengajarkan kita untuk bersyukur atas nikmat Allah.",
+        createdAt: "2026-01-05 15:20",
+      },
+    ],
     video: "https://www.youtube.com/embed/4zLfCnGVeL4",
   },
   {
@@ -103,7 +342,23 @@ export const MOCK_DISCUSSIONS: Discussion[] = [
     authorAvatar: null,
     content: "Mohon dijelaskan tentang tata cara sholat jenazah. Apakah ada yang punya catatan atau referensi?",
     createdAt: "2026-01-04 09:00",
-    replies: 3,
+    repliesCount: 3,
+    repliesData: [
+      {
+        id: 1,
+        authorName: "Ustadz Hasan",
+        authorAvatar: null,
+        content: "Sholat jenazah dilakukan dengan 4 takbir. Takbir 1: Al-Fatihah, Takbir 2: Sholawat, Takbir 3: Doa untuk jenazah, Takbir 4: Doa penutup lalu salam.",
+        createdAt: "2026-01-04 09:30",
+      },
+      {
+        id: 2,
+        authorName: "Aisyah",
+        authorAvatar: null,
+        content: "Saya punya catatan dari pelajaran kemarin, bisa saya foto dan kirim di sini.",
+        createdAt: "2026-01-04 10:00",
+      },
+    ],
   },
   {
     id: 4,
@@ -111,11 +366,41 @@ export const MOCK_DISCUSSIONS: Discussion[] = [
     authorAvatar: null,
     content: "Dokumentasi kegiatan belajar tajwid hari ini! Alhamdulillah berjalan lancar. Ada video penjelasan dari guru dan foto-foto saat praktik.",
     createdAt: "2026-01-03 15:45",
-    replies: 12,
+    repliesCount: 12,
+    repliesData: [
+      {
+        id: 1,
+        authorName: "Ahmad",
+        authorAvatar: null,
+        content: "MasyaAllah, kegiatannya seru banget! Kapan ada lagi ya?",
+        createdAt: "2026-01-03 16:00",
+      },
+      {
+        id: 2,
+        authorName: "Fatimah",
+        authorAvatar: null,
+        content: "Terima kasih sudah mendokumentasikan. Foto-fotonya bagus!",
+        createdAt: "2026-01-03 16:15",
+      },
+      {
+        id: 3,
+        authorName: "Ustadz Hasan",
+        authorAvatar: null,
+        content: "Alhamdulillah kegiatan hari ini berjalan lancar. Minggu depan kita lanjutkan ke materi mad.",
+        createdAt: "2026-01-03 16:30",
+      },
+      {
+        id: 4,
+        authorName: "Muhammad",
+        authorAvatar: null,
+        content: "Siap Ustadz! Semoga semakin lancar membaca Al-Quran kita semua.",
+        createdAt: "2026-01-03 16:45",
+      },
+    ],
     images: [
-      "https://picsum.photos/seed/study1/400/300",
-      "https://picsum.photos/seed/class1/400/300",
-      "https://picsum.photos/seed/book1/400/300",
+      "https://placehold.co/400x300/fff3e0/e65100?text=Kegiatan+1",
+      "https://placehold.co/400x300/fce4ec/c2185b?text=Kegiatan+2",
+      "https://placehold.co/400x300/f3e5f5/7b1fa2?text=Kegiatan+3",
     ],
     video: "https://www.youtube.com/embed/LDU_Txk06tM",
   },
@@ -125,9 +410,32 @@ export const MOCK_DISCUSSIONS: Discussion[] = [
     authorAvatar: null,
     content: "Berikut foto materi tentang Rukun Iman yang saya ringkas. Semoga bermanfaat untuk teman-teman.",
     createdAt: "2026-01-02 08:20",
-    replies: 7,
+    repliesCount: 7,
+    repliesData: [
+      {
+        id: 1,
+        authorName: "Fatimah",
+        authorAvatar: null,
+        content: "Wah ringkasannya rapi sekali! Terima kasih Umar!",
+        createdAt: "2026-01-02 08:45",
+      },
+      {
+        id: 2,
+        authorName: "Aisyah",
+        authorAvatar: null,
+        content: "Boleh saya simpan untuk belajar juga?",
+        createdAt: "2026-01-02 09:00",
+      },
+      {
+        id: 3,
+        authorName: "Umar",
+        authorAvatar: null,
+        content: "Silakan Aisyah, semoga bermanfaat untuk kita semua.",
+        createdAt: "2026-01-02 09:15",
+      },
+    ],
     images: [
-      "https://picsum.photos/seed/notes1/400/300",
+      "https://placehold.co/400x300/e8eaf6/3f51b5?text=Rukun+Iman",
     ],
   },
 ];
@@ -168,8 +476,8 @@ export const MOCK_FORUM_POSTS: ForumPost[] = [
     likes: 15,
     comments: 5,
     images: [
-      "https://picsum.photos/seed/notes2/400/300",
-      "https://picsum.photos/seed/study2/400/300",
+      "https://placehold.co/400x300/e0f7fa/00796b?text=Catatan+1",
+      "https://placehold.co/400x300/f1f8e9/558b2f?text=Catatan+2",
     ],
   },
   {
@@ -182,7 +490,7 @@ export const MOCK_FORUM_POSTS: ForumPost[] = [
     likes: 8,
     comments: 18,
     images: [
-      "https://picsum.photos/seed/wudhu1/400/300",
+      "https://placehold.co/400x300/e1f5fe/0288d1?text=Tata+Cara+Wudhu",
     ],
   },
   {
@@ -195,22 +503,59 @@ export const MOCK_FORUM_POSTS: ForumPost[] = [
     likes: 45,
     comments: 23,
     images: [
-      "https://picsum.photos/seed/lomba1/400/300",
-      "https://picsum.photos/seed/lomba2/400/300",
-      "https://picsum.photos/seed/lomba3/400/300",
+      "https://placehold.co/400x300/fff8e1/ff8f00?text=Lomba+Adzan+1",
+      "https://placehold.co/400x300/ffebee/e53935?text=Lomba+Adzan+2",
+      "https://placehold.co/400x300/f3e5f5/8e24aa?text=Lomba+Adzan+3",
     ],
     video: "https://www.youtube.com/embed/LDU_Txk06tM",
   },
 ];
 
-// Info kelas siswa (mock)
-export const MOCK_CLASS_INFO = {
-  id: 1,
-  name: "PAI Kelas 9A",
+// Info kelas-kelas siswa (mock) - siswa bisa punya lebih dari 1 kelas
+export interface ClassInfo {
+  id: number;
+  name: string;
+  subject: string;
   teacher: {
-    name: "Ustadz Hasan",
-    email: "hasan@sekolah.sch.id",
+    name: string;
+    email: string;
+  };
+  totalStudents: number;
+  school: string;
+  color: string;
+}
+
+export const MOCK_CLASSES: ClassInfo[] = [
+  {
+    id: 1,
+    name: "PAI Kelas 9A",
+    subject: "Pendidikan Agama Islam",
+    teacher: {
+      name: "Ustadz Hasan",
+      email: "hasan@sekolah.sch.id",
+    },
+    totalStudents: 32,
+    school: "SMP Negeri 1 Jakarta",
+    color: "from-teal-600 to-teal-500",
   },
-  totalStudents: 32,
-  school: "SMP Negeri 1 Jakarta",
+  {
+    id: 2,
+    name: "Bahasa Indonesia 9A",
+    subject: "Bahasa Indonesia",
+    teacher: {
+      name: "Bu Siti",
+      email: "siti@sekolah.sch.id",
+    },
+    totalStudents: 32,
+    school: "SMP Negeri 1 Jakarta",
+    color: "from-orange-600 to-orange-500",
+  },
+];
+
+// Helper function to get class by ID
+export const getClassById = (id: number): ClassInfo | undefined => {
+  return MOCK_CLASSES.find((c) => c.id === id);
 };
+
+// Keep old MOCK_CLASS_INFO for backward compatibility
+export const MOCK_CLASS_INFO = MOCK_CLASSES[0];

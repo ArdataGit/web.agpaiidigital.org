@@ -1,7 +1,6 @@
 "use client";
 import { useAuth } from "@/utils/context/auth_context";
 import {
-  BookOpenIcon,
   ChatBubbleLeftRightIcon,
   ChevronRightIcon,
   AcademicCapIcon,
@@ -12,7 +11,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  MOCK_CLASS_INFO,
+  MOCK_CLASSES,
   MOCK_FORUM_POSTS,
 } from "@/constants/student-data";
 import { getImage } from "@/utils/function/function";
@@ -24,14 +23,9 @@ export default function StudentHomePage() {
 
   // Fungsi logout untuk akun demo siswa
   const handleLogout = async () => {
-    // Hapus flag demo student mode dari localStorage
     localStorage.removeItem("demo_student_mode");
     localStorage.removeItem("access_token");
-    
-    // Invalidate auth query
     await queryClient.invalidateQueries({ queryKey: ["auth"] });
-    
-    // Redirect ke halaman login
     router.push("/getting-started");
   };
 
@@ -57,7 +51,7 @@ export default function StudentHomePage() {
               <ArrowRightOnRectangleIcon className="size-5 text-red-500" />
             </button>
             {/* Profile Image */}
-            <Link href="/kelas?tab=profile" className="rounded-full border-2 border-white flex-shrink-0">
+            <div className="rounded-full border-2 border-white flex-shrink-0">
               <img
                 src={
                   (auth?.avatar && getImage(auth.avatar)) ||
@@ -66,41 +60,12 @@ export default function StudentHomePage() {
                 className="object-cover rounded-full size-10"
                 alt=""
               />
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Info Kelas */}
-      <div className="px-4 mb-4">
-        <div className="bg-gradient-to-r from-teal-600 to-teal-500 rounded-2xl p-4 shadow-md">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="bg-white/20 rounded-xl p-2">
-              <AcademicCapIcon className="size-6 text-white" />
-            </div>
-            <div>
-              <p className="text-white/80 text-xs">Kelas Anda</p>
-              <p className="text-white font-semibold text-lg">{MOCK_CLASS_INFO.name}</p>
-            </div>
-          </div>
-          <div className="bg-white/10 rounded-lg p-3">
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-white/80">Wali Kelas</span>
-              <span className="text-white font-medium">{MOCK_CLASS_INFO.teacher.name}</span>
-            </div>
-            <div className="flex justify-between items-center text-sm mt-1">
-              <span className="text-white/80">Sekolah</span>
-              <span className="text-white font-medium">{MOCK_CLASS_INFO.school}</span>
-            </div>
-            <div className="flex justify-between items-center text-sm mt-1">
-              <span className="text-white/80">Jumlah Siswa</span>
-              <span className="text-white font-medium">{MOCK_CLASS_INFO.totalStudents} siswa</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Feature Cards */}
+      {/* Feature Cards - 2 Main Features */}
       <div className="px-4 space-y-3 mb-6">
         {/* Kelas Saya Card */}
         <Link href="/kelas" className="block">
@@ -113,7 +78,7 @@ export default function StudentHomePage() {
             
             <div className="relative z-10">
               <span className="inline-block px-3 py-1 bg-white/20 text-white text-xs font-medium rounded-full mb-3">
-                DASHBOARD UTAMA
+                {MOCK_CLASSES.length} KELAS TERDAFTAR
               </span>
               <h3 className="text-white text-xl font-bold mb-1">Kelas Saya</h3>
               <p className="text-white/90 text-sm mb-4">

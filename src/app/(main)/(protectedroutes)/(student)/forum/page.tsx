@@ -5,10 +5,12 @@ import {
   ChevronLeftIcon,
   HeartIcon,
   ChatBubbleLeftIcon,
-  PaperAirplaneIcon,
   PhotoIcon,
   VideoCameraIcon,
   XMarkIcon,
+  PlusIcon,
+  HomeIcon,
+  ChatBubbleLeftRightIcon,
 } from "@heroicons/react/24/outline";
 import { HeartIcon as HeartSolidIcon } from "@heroicons/react/24/solid";
 import { MOCK_FORUM_POSTS } from "@/constants/student-data";
@@ -21,6 +23,7 @@ export default function ForumPage() {
   const [likedPosts, setLikedPosts] = useState<number[]>([]);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [videoUrl, setVideoUrl] = useState("");
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const handleLike = (postId: number) => {
     setLikedPosts((prev) =>
@@ -55,121 +58,22 @@ export default function ForumPage() {
       setNewPost("");
       setSelectedImages([]);
       setVideoUrl("");
+      setShowAddModal(false);
       alert("Postingan berhasil ditambahkan! (Mock)");
     }
   };
 
   return (
-    <div className="w-full max-w-[480px] mx-auto bg-white min-h-screen">
+    <div className="w-full max-w-[480px] mx-auto bg-white min-h-screen pb-20">
       {/* Header */}
       <div className="bg-gradient-to-r from-teal-600 to-teal-500 text-white p-4 pt-6 sticky top-0 z-20">
         <div className="flex items-center gap-3">
-          <Link href="/kelas" className="p-1">
+          <Link href="/beranda" className="p-1">
             <ChevronLeftIcon className="size-6" />
           </Link>
           <div>
             <h1 className="text-lg font-semibold">Forum Publik</h1>
             <p className="text-xs text-teal-100">Diskusi untuk seluruh sekolah</p>
-          </div>
-        </div>
-      </div>
-
-      {/* New Post Form with Media Support */}
-      <div className="p-4 border-b border-slate-200 bg-white">
-        <div className="flex gap-3">
-          <img
-            src="https://avatar.iran.liara.run/public"
-            alt="You"
-            className="size-10 rounded-full flex-shrink-0"
-          />
-          <div className="flex-1">
-            <textarea
-              value={newPost}
-              onChange={(e) => setNewPost(e.target.value)}
-              placeholder="Bagikan sesuatu dengan teman-temanmu..."
-              className="w-full border border-slate-300 rounded-lg p-3 text-sm resize-none focus:outline-none focus:border-teal-500"
-              rows={3}
-            />
-            
-            {/* Media Preview */}
-            {(selectedImages.length > 0 || videoUrl) && (
-              <div className="mt-3 space-y-2">
-                {selectedImages.length > 0 && (
-                  <div className="flex gap-2 flex-wrap">
-                    {selectedImages.map((img, idx) => (
-                      <div key={idx} className="relative">
-                        <img
-                          src={img}
-                          alt={`Preview ${idx + 1}`}
-                          className="w-16 h-16 object-cover rounded-lg border border-slate-200"
-                        />
-                        <button
-                          onClick={() => setSelectedImages(prev => prev.filter((_, i) => i !== idx))}
-                          className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center"
-                        >
-                          <XMarkIcon className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {videoUrl && (
-                  <div className="flex items-center gap-2 bg-slate-100 p-2 rounded-lg">
-                    <span className="text-xs text-slate-600 truncate flex-1">{videoUrl}</span>
-                    <button
-                      onClick={() => setVideoUrl("")}
-                      className="text-red-500 text-xs font-medium"
-                    >
-                      Hapus
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-            
-            {/* Media Buttons & Submit */}
-            <div className="flex items-center gap-2 mt-3">
-              <label className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium rounded-lg cursor-pointer transition">
-                <PhotoIcon className="w-4 h-4" />
-                Foto
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  onChange={handleImageUpload}
-                />
-              </label>
-              <button
-                onClick={() => {
-                  const url = prompt("Masukkan URL video YouTube:");
-                  if (url) {
-                    let embedUrl = url;
-                    if (url.includes("youtube.com/watch")) {
-                      const videoId = url.split("v=")[1]?.split("&")[0];
-                      embedUrl = `https://www.youtube.com/embed/${videoId}`;
-                    } else if (url.includes("youtu.be/")) {
-                      const videoId = url.split("youtu.be/")[1]?.split("?")[0];
-                      embedUrl = `https://www.youtube.com/embed/${videoId}`;
-                    }
-                    setVideoUrl(embedUrl);
-                  }
-                }}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium rounded-lg transition"
-              >
-                <VideoCameraIcon className="w-4 h-4" />
-                Video
-              </button>
-              <div className="flex-1"></div>
-              <button
-                onClick={handleAddPost}
-                disabled={!newPost.trim() && selectedImages.length === 0 && !videoUrl}
-                className="flex items-center gap-2 px-4 py-1.5 bg-teal-600 text-white text-xs font-medium rounded-lg hover:bg-teal-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <PaperAirplaneIcon className="size-4" />
-                Posting
-              </button>
-            </div>
           </div>
         </div>
       </div>
@@ -268,6 +172,146 @@ export default function ForumPage() {
       <div className="p-8 text-center">
         <p className="text-sm text-slate-400">Tidak ada postingan lagi</p>
       </div>
+
+      {/* Bottom Navigation Bar with Plus Button */}
+      <div className="fixed bottom-0 left-0 right-0 z-[100] max-w-[480px] mx-auto bg-white border-t border-slate-200 shadow-lg">
+        <div className="flex items-end justify-around h-16 px-2">
+          {/* Home */}
+          <Link href="/beranda" className="flex-1 flex flex-col items-center justify-center gap-1 py-2 transition">
+            <HomeIcon className="size-5 text-slate-400" />
+            <span className="text-[10px] font-medium text-slate-400">Beranda</span>
+          </Link>
+          
+          {/* Center Plus Button */}
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="flex flex-col items-center justify-center -mt-6 px-3"
+          >
+            <div className="w-14 h-14 bg-teal-500 rounded-full flex items-center justify-center shadow-xl border-4 border-white">
+              <PlusIcon className="w-7 h-7 text-white" />
+            </div>
+            <span className="text-[10px] font-medium text-slate-500 mt-1">Posting</span>
+          </button>
+          
+          {/* Forum (Active) */}
+          <div className="flex-1 flex flex-col items-center justify-center gap-1 py-2 transition">
+            <ChatBubbleLeftRightIcon className="size-5 text-teal-600" />
+            <span className="text-[10px] font-medium text-teal-600">Forum</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Add Post Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-[200] flex items-end justify-center">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setShowAddModal(false)}
+          />
+          
+          {/* Modal Content */}
+          <div className="relative w-full max-w-[480px] bg-white rounded-t-2xl p-4 pb-6 animate-slide-up">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-slate-700">Buat Postingan</h3>
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="p-1 hover:bg-slate-100 rounded-full"
+              >
+                <XMarkIcon className="w-6 h-6 text-slate-500" />
+              </button>
+            </div>
+
+            <textarea
+              value={newPost}
+              onChange={(e) => setNewPost(e.target.value)}
+              placeholder="Bagikan sesuatu dengan teman-temanmu..."
+              className="w-full border border-slate-300 rounded-lg p-3 text-sm resize-none focus:outline-none focus:border-teal-500"
+              rows={4}
+              autoFocus
+            />
+            
+            {/* Media Preview */}
+            {(selectedImages.length > 0 || videoUrl) && (
+              <div className="mt-3 space-y-2">
+                {selectedImages.length > 0 && (
+                  <div className="flex gap-2 flex-wrap">
+                    {selectedImages.map((img, idx) => (
+                      <div key={idx} className="relative">
+                        <img
+                          src={img}
+                          alt={`Preview ${idx + 1}`}
+                          className="w-16 h-16 object-cover rounded-lg border border-slate-200"
+                        />
+                        <button
+                          onClick={() => setSelectedImages(prev => prev.filter((_, i) => i !== idx))}
+                          className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center"
+                        >
+                          <XMarkIcon className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {videoUrl && (
+                  <div className="flex items-center gap-2 bg-slate-100 p-2 rounded-lg">
+                    <span className="text-xs text-slate-600 truncate flex-1">{videoUrl}</span>
+                    <button
+                      onClick={() => setVideoUrl("")}
+                      className="text-red-500 text-xs font-medium"
+                    >
+                      Hapus
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Media Buttons */}
+            <div className="flex items-center gap-2 mt-3">
+              <label className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-medium rounded-lg cursor-pointer transition">
+                <PhotoIcon className="w-5 h-5" />
+                Foto
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleImageUpload}
+                />
+              </label>
+              <button
+                onClick={() => {
+                  const url = prompt("Masukkan URL video YouTube:");
+                  if (url) {
+                    let embedUrl = url;
+                    if (url.includes("youtube.com/watch")) {
+                      const videoId = url.split("v=")[1]?.split("&")[0];
+                      embedUrl = `https://www.youtube.com/embed/${videoId}`;
+                    } else if (url.includes("youtu.be/")) {
+                      const videoId = url.split("youtu.be/")[1]?.split("?")[0];
+                      embedUrl = `https://www.youtube.com/embed/${videoId}`;
+                    }
+                    setVideoUrl(embedUrl);
+                  }
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-medium rounded-lg transition"
+              >
+                <VideoCameraIcon className="w-5 h-5" />
+                Video
+              </button>
+              <div className="flex-1"></div>
+              <button
+                onClick={handleAddPost}
+                disabled={!newPost.trim() && selectedImages.length === 0 && !videoUrl}
+                className="px-5 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Posting
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
