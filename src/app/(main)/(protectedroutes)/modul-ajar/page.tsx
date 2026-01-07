@@ -46,7 +46,9 @@ const ModulAjarPage: React.FC = () => {
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [sortBy, setSortBy] = useState<'latest' | 'likes' | 'downloads'>('likes');
+  const [sortBy, setSortBy] = useState<"latest" | "likes" | "downloads">(
+    "likes"
+  );
 
   // Filter states
   const [jenjangOptions, setJenjangOptions] = useState<JenjangOption[]>([]);
@@ -128,28 +130,33 @@ const ModulAjarPage: React.FC = () => {
       }
 
       if (searchQuery) {
-        endpoint += `${endpoint.includes("?") ? "&" : "?"}search=${encodeURIComponent(searchQuery)}`;
+        endpoint += `${
+          endpoint.includes("?") ? "&" : "?"
+        }search=${encodeURIComponent(searchQuery)}`;
       }
 
       const response = await axios.get(endpoint);
 
       if (response.data.data && response.data.data.length > 0) {
-        const mappedData: CardData[] = response.data.data.map((module: any) => ({
-          id: module.id.toString(),
-          type: "Materi ajar & RPP",
-          topic: module.judul,
-          jenjangId: module.jenjang?.id_jenjang || module.jenjang_id,
-          faseId: module.fase?.id_fase || module.fase_id,
-          grade: {
-            id: module.fase?.id_fase || 0,
-            description: module.fase?.deskripsi || module.fase?.nama_fase || "Kelas",
-          },
-          image: module.image || "/img/thumbnailmodul.png",
-          created_at: module.created_at || new Date().toISOString(),
-          downloads: module.downloads || 0,
-          likes_count: module.likes_count || 0,
-          user_id: module.user_id,
-        }));
+        const mappedData: CardData[] = response.data.data.map(
+          (module: any) => ({
+            id: module.id.toString(),
+            type: "Materi ajar & RPP",
+            topic: module.judul,
+            jenjangId: module.jenjang?.id_jenjang || module.jenjang_id,
+            faseId: module.fase?.id_fase || module.fase_id,
+            grade: {
+              id: module.fase?.id_fase || 0,
+              description:
+                module.fase?.deskripsi || module.fase?.nama_fase || "Kelas",
+            },
+            image: module.image || "/img/thumbnailmodul.png",
+            created_at: module.created_at || new Date().toISOString(),
+            downloads: module.downloads_count || 0,
+            likes_count: module.likes_count || 0,
+            user_id: module.user_id,
+          })
+        );
 
         const newCards = append ? [...cards, ...mappedData] : mappedData;
 
@@ -239,7 +246,11 @@ const ModulAjarPage: React.FC = () => {
       {/* Hero Banner */}
       <div className="mx-4 mt-4 bg-[#006557] rounded-2xl p-4 flex items-center gap-4">
         <div className="bg-[#00806B] rounded-xl p-3">
-          <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 20 20">
+          <svg
+            className="w-10 h-10 text-white"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
             <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
           </svg>
         </div>
@@ -257,7 +268,9 @@ const ModulAjarPage: React.FC = () => {
       <div className="flex space-x-2 px-4 mt-4">
         <button
           className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-            activeTab === "all" ? "bg-[#006557] text-white" : "bg-gray-100 text-gray-600"
+            activeTab === "all"
+              ? "bg-[#006557] text-white"
+              : "bg-gray-100 text-gray-600"
           }`}
           onClick={() => setActiveTab("all")}
         >
@@ -265,7 +278,9 @@ const ModulAjarPage: React.FC = () => {
         </button>
         <button
           className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-            activeTab === "mine" ? "bg-[#006557] text-white" : "bg-gray-100 text-gray-600"
+            activeTab === "mine"
+              ? "bg-[#006557] text-white"
+              : "bg-gray-100 text-gray-600"
           }`}
           onClick={() => setActiveTab("mine")}
         >
@@ -275,8 +290,12 @@ const ModulAjarPage: React.FC = () => {
 
       {/* Filter Section */}
       <div className="p-4">
-        <h3 className="font-semibold text-gray-800 mb-2">Mau cari materi apa?</h3>
-        <p className="text-sm text-gray-500 mb-4">Cari materi berdasarkan filter pencarian</p>
+        <h3 className="font-semibold text-gray-800 mb-2">
+          Mau cari materi apa?
+        </h3>
+        <p className="text-sm text-gray-500 mb-4">
+          Cari materi berdasarkan filter pencarian
+        </p>
 
         <div className="flex gap-2 mb-3">
           <select
@@ -322,9 +341,18 @@ const ModulAjarPage: React.FC = () => {
             onClick={handleSearch}
             className="flex-1 py-3 bg-white border border-gray-300 rounded-full text-gray-600 font-medium flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
             </svg>
             Cari materi ajar
           </button>
@@ -335,7 +363,9 @@ const ModulAjarPage: React.FC = () => {
       <div className="px-4 pb-6">
         {activeTab === "mine" && !isLoading && cards.length === 0 && (
           <div className="text-center py-8">
-            <p className="text-gray-500 mb-4">Anda belum memiliki modul ajar.</p>
+            <p className="text-gray-500 mb-4">
+              Anda belum memiliki modul ajar.
+            </p>
             <button
               className="px-6 py-2 bg-[#006557] text-white rounded-lg font-medium"
               onClick={() => router.push("/perangkat-ajar/tambah")}
@@ -348,7 +378,9 @@ const ModulAjarPage: React.FC = () => {
         {filteredCards.length > 0 && (
           <div className="flex justify-between items-center mb-4">
             <p className="text-gray-700">Menampilkan hasil pencarian</p>
-            <p className="text-[#006557] font-medium">{filteredCards.length} hasil</p>
+            <p className="text-[#006557] font-medium">
+              {filteredCards.length} hasil
+            </p>
           </div>
         )}
 
@@ -356,7 +388,9 @@ const ModulAjarPage: React.FC = () => {
           {isLoading && cards.length === 0 ? (
             <p className="text-center py-8">Loading...</p>
           ) : filteredCards.length === 0 && !isLoading ? (
-            <p className="text-center text-gray-500 py-8">Tidak ada modul ajar ditemukan</p>
+            <p className="text-center text-gray-500 py-8">
+              Tidak ada modul ajar ditemukan
+            </p>
           ) : (
             filteredCards.map((item) => (
               <div
@@ -374,7 +408,8 @@ const ModulAjarPage: React.FC = () => {
                     alt={item.topic}
                     className="w-16 h-16 rounded-lg object-cover bg-gray-100"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = "/img/modul-placeholder.png";
+                      (e.target as HTMLImageElement).src =
+                        "/img/modul-placeholder.png";
                     }}
                   />
                 </div>
@@ -387,22 +422,41 @@ const ModulAjarPage: React.FC = () => {
                     {item.topic}
                   </h3>
                   <p className="text-xs text-gray-500 mt-1">
-                    Diunggah pada: {moment(item.created_at).format("MMM DD YYYY")}
+                    Diunggah pada:{" "}
+                    {moment(item.created_at).format("MMM DD YYYY")}
                   </p>
                 </div>
 
                 <div className="flex flex-col items-end justify-center gap-1 text-xs text-gray-500">
                   <div className="flex items-center gap-1">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                        d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"
+                      />
                     </svg>
                     <span>{item.likes_count || 0}</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                      />
                     </svg>
                     <span>{item.downloads || 0}</span>
                   </div>

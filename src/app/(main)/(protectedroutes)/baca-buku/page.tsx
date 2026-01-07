@@ -324,7 +324,10 @@ const BacaBukuPage = () => {
                   Paling banyak disukai
                 </p>
               </div>
-              <button className="text-teal-600 text-sm font-medium hover:text-teal-700">
+              <button 
+                onClick={() => router.push("/baca-buku/semua?sort=likes")}
+                className="text-teal-600 text-sm font-medium hover:text-teal-700"
+              >
                 Lihat Semua
               </button>
             </div>
@@ -370,7 +373,10 @@ const BacaBukuPage = () => {
                   Paling banyak dilihat
                 </p>
               </div>
-              <button className="text-teal-600 text-sm font-medium hover:text-teal-700">
+              <button 
+                onClick={() => router.push("/baca-buku/semua?sort=views")}
+                className="text-teal-600 text-sm font-medium hover:text-teal-700"
+              >
                 Lihat Semua
               </button>
             </div>

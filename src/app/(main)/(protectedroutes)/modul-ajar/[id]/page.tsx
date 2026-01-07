@@ -53,8 +53,15 @@ const DetailModulAjarPage: React.FC = () => {
       }
 
       try {
+        // Build query params
+        const params: any = {};
+        if (user?.id) {
+          params.user_id = user.id;
+        }
+
         const response = await axios.get(
-          `${API_URL}/modules-learn/${materialId}`
+          `${API_URL}/modules-learn/${materialId}`,
+          { params }
         );
         const data = response.data?.data;
         setMaterialData(data);
@@ -76,7 +83,7 @@ const DetailModulAjarPage: React.FC = () => {
     };
 
     fetchMaterialData();
-  }, [materialId, API_URL]);
+  }, [materialId, API_URL, user?.id]);
 
   const handleLike = async () => {
     if (!user) {
