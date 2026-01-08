@@ -31,6 +31,7 @@ import {
   MOCK_EXERCISES,
   Material,
   Exercise,
+  Question,
 } from "@/constants/student-data";
 
 type TabType = "presensi" | "materi" | "latihan" | "rekap";
@@ -95,6 +96,44 @@ export default function KelasGuruDetailPage() {
     deadline: "",
   });
   
+  // Questions for new exercise
+  const [newQuestions, setNewQuestions] = useState<{
+    question: string;
+    options: string[];
+    correctAnswer: number;
+  }[]>([]);
+  
+  const addQuestion = () => {
+    setNewQuestions([
+      ...newQuestions,
+      {
+        question: "",
+        options: ["", "", "", ""],
+        correctAnswer: 0,
+      },
+    ]);
+  };
+  
+  const removeQuestion = (index: number) => {
+    setNewQuestions(newQuestions.filter((_, i) => i !== index));
+  };
+  
+  const updateQuestion = (index: number, field: string, value: string | number) => {
+    const updated = [...newQuestions];
+    if (field === "question") {
+      updated[index].question = value as string;
+    } else if (field === "correctAnswer") {
+      updated[index].correctAnswer = value as number;
+    }
+    setNewQuestions(updated);
+  };
+  
+  const updateOption = (questionIndex: number, optionIndex: number, value: string) => {
+    const updated = [...newQuestions];
+    updated[questionIndex].options[optionIndex] = value;
+    setNewQuestions(updated);
+  };
+  
   // Handlers
   const handleDateChange = (newDate: string) => {
     setSelectedDate(newDate);
@@ -149,19 +188,41 @@ export default function KelasGuruDetailPage() {
   
   const handleAddExercise = () => {
     if (!newExercise.title || !newExercise.description || !newExercise.deadline) return;
+    if (newQuestions.length === 0) {
+      alert("Tambahkan minimal 1 soal");
+      return;
+    }
+    
+    // Validate all questions have content
+    const hasEmptyQuestion = newQuestions.some(
+      (q) => !q.question.trim() || q.options.some((opt) => !opt.trim())
+    );
+    if (hasEmptyQuestion) {
+      alert("Lengkapi semua soal dan pilihan jawaban");
+      return;
+    }
+    
+    const questions: Question[] = newQuestions.map((q, idx) => ({
+      id: idx + 1,
+      question: q.question,
+      options: q.options,
+      correctAnswer: q.correctAnswer,
+    }));
     
     const exercise: Exercise = {
       id: Date.now(),
       title: newExercise.title,
       description: newExercise.description,
-      totalQuestions: 5,
+      totalQuestions: newQuestions.length,
       duration: newExercise.duration,
       deadline: newExercise.deadline,
       isCompleted: false,
+      questions: questions,
     };
     
     setExercises([exercise, ...exercises]);
     setNewExercise({ title: "", description: "", duration: 10, deadline: "" });
+    setNewQuestions([]);
     setShowAddExerciseModal(false);
   };
   
@@ -643,10 +704,10 @@ export default function KelasGuruDetailPage() {
 
       {/* Add Exercise Modal */}
       {showAddExerciseModal && (
-        <div className="fixed inset-0 z-[200] flex items-end justify-center">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center">
           <div className="absolute inset-0 bg-black/50" onClick={() => setShowAddExerciseModal(false)} />
-          <div className="relative w-full max-w-[480px] bg-white rounded-t-2xl p-4 pb-6 max-h-[80vh] overflow-auto">
-            <div className="flex items-center justify-between mb-4">
+          <div className="relative w-full max-w-[480px] bg-white rounded-2xl p-4 pb-6 max-h-[90vh] overflow-auto mx-4">
+            <div className="flex items-center justify-between mb-4 sticky top-0 bg-white pb-2 border-b border-slate-100">
               <h3 className="text-lg font-semibold text-slate-700">Tambah Latihan Soal</h3>
               <button onClick={() => setShowAddExerciseModal(false)} className="p-1 hover:bg-slate-100 rounded-full">
                 <XMarkIcon className="size-6 text-slate-500" />
@@ -654,6 +715,7 @@ export default function KelasGuruDetailPage() {
             </div>
             
             <div className="space-y-4">
+              {/* Basic Info */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Judul Latihan *</label>
                 <input
@@ -671,38 +733,121 @@ export default function KelasGuruDetailPage() {
                   value={newExercise.description}
                   onChange={(e) => setNewExercise({ ...newExercise, description: e.target.value })}
                   placeholder="Deskripsi singkat tentang latihan ini..."
-                  rows={3}
+                  rows={2}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 resize-none"
                 />
               </div>
               
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Durasi (menit)</label>
-                <input
-                  type="number"
-                  value={newExercise.duration}
-                  onChange={(e) => setNewExercise({ ...newExercise, duration: parseInt(e.target.value) || 10 })}
-                  min={1}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Durasi (menit)</label>
+                  <input
+                    type="number"
+                    value={newExercise.duration}
+                    onChange={(e) => setNewExercise({ ...newExercise, duration: parseInt(e.target.value) || 10 })}
+                    min={1}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Deadline *</label>
+                  <input
+                    type="date"
+                    value={newExercise.deadline}
+                    onChange={(e) => setNewExercise({ ...newExercise, deadline: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
+                  />
+                </div>
               </div>
               
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Deadline *</label>
-                <input
-                  type="date"
-                  value={newExercise.deadline}
-                  onChange={(e) => setNewExercise({ ...newExercise, deadline: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
-                />
+              {/* Questions Section */}
+              <div className="border-t border-slate-200 pt-4 mt-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-medium text-slate-700">Daftar Soal ({newQuestions.length})</h4>
+                  <button
+                    onClick={addQuestion}
+                    className="flex items-center gap-1 px-3 py-1.5 bg-teal-100 text-teal-700 text-xs font-medium rounded-lg hover:bg-teal-200 transition"
+                  >
+                    <PlusIcon className="size-4" />
+                    Tambah Soal
+                  </button>
+                </div>
+                
+                {newQuestions.length === 0 ? (
+                  <div className="text-center py-6 bg-slate-50 rounded-lg border-2 border-dashed border-slate-200">
+                    <ClipboardDocumentListIcon className="size-8 text-slate-300 mx-auto mb-2" />
+                    <p className="text-sm text-slate-500">Belum ada soal</p>
+                    <p className="text-xs text-slate-400">Klik "Tambah Soal" untuk membuat soal</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {newQuestions.map((q, qIndex) => (
+                      <div key={qIndex} className="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                        <div className="flex items-start justify-between mb-2">
+                          <span className="text-xs font-bold text-teal-600 bg-teal-100 px-2 py-0.5 rounded-full">
+                            Soal {qIndex + 1}
+                          </span>
+                          <button
+                            onClick={() => removeQuestion(qIndex)}
+                            className="p-1 text-red-500 hover:bg-red-50 rounded"
+                          >
+                            <TrashIcon className="size-4" />
+                          </button>
+                        </div>
+                        
+                        <textarea
+                          value={q.question}
+                          onChange={(e) => updateQuestion(qIndex, "question", e.target.value)}
+                          placeholder="Tulis pertanyaan di sini..."
+                          rows={2}
+                          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 resize-none mb-3"
+                        />
+                        
+                        <p className="text-xs font-medium text-slate-500 mb-2">Pilihan Jawaban (klik untuk pilih jawaban benar)</p>
+                        <div className="space-y-2">
+                          {q.options.map((opt, optIndex) => (
+                            <div key={optIndex} className="flex items-center gap-2">
+                              <button
+                                onClick={() => updateQuestion(qIndex, "correctAnswer", optIndex)}
+                                className={clsx(
+                                  "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition flex-shrink-0",
+                                  q.correctAnswer === optIndex
+                                    ? "bg-green-500 text-white"
+                                    : "bg-white border-2 border-slate-300 text-slate-500 hover:border-green-400"
+                                )}
+                              >
+                                {String.fromCharCode(65 + optIndex)}
+                              </button>
+                              <input
+                                type="text"
+                                value={opt}
+                                onChange={(e) => updateOption(qIndex, optIndex, e.target.value)}
+                                placeholder={`Pilihan ${String.fromCharCode(65 + optIndex)}`}
+                                className={clsx(
+                                  "flex-1 px-3 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20",
+                                  q.correctAnswer === optIndex
+                                    ? "border-green-400 bg-green-50"
+                                    : "border-slate-300"
+                                )}
+                              />
+                              {q.correctAnswer === optIndex && (
+                                <CheckCircleSolidIcon className="size-5 text-green-500 flex-shrink-0" />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               
               <button
                 onClick={handleAddExercise}
-                disabled={!newExercise.title || !newExercise.description || !newExercise.deadline}
+                disabled={!newExercise.title || !newExercise.description || !newExercise.deadline || newQuestions.length === 0}
                 className="w-full py-3 bg-teal-600 text-white font-semibold rounded-xl hover:bg-teal-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Simpan Latihan
+                Simpan Latihan ({newQuestions.length} soal)
               </button>
             </div>
           </div>
