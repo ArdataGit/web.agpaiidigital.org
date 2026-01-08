@@ -5,14 +5,19 @@ import {
   ChevronRightIcon,
   AcademicCapIcon,
   UserGroupIcon,
-  ClipboardDocumentCheckIcon,
+  BookOpenIcon,
+  ClipboardDocumentListIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
-import { MOCK_CLASSES, getStudentsInClass } from "@/constants/student-data";
+import { MOCK_CLASSES, getStudentsInClass, MOCK_MATERIALS, MOCK_EXERCISES } from "@/constants/student-data";
 import clsx from "clsx";
 
 export default function KelasGuruListPage() {
   const { auth } = useAuth();
+  
+  // Untuk guru, hanya tampilkan 1 kelas yang diampu (demo: kelas pertama)
+  const teacherClass = MOCK_CLASSES[0];
+  const studentCount = getStudentsInClass(teacherClass.id).length;
 
   return (
     <div className="w-full max-w-[480px] mx-auto bg-white min-h-screen">
@@ -35,55 +40,61 @@ export default function KelasGuruListPage() {
               <AcademicCapIcon className="size-6 text-white" />
             </div>
             <div>
-              <p className="text-white/80 text-xs">Total Kelas Diampu</p>
-              <p className="text-white font-semibold text-lg">{MOCK_CLASSES.length} Kelas</p>
+              <p className="text-white/80 text-xs">Kelas yang Diampu</p>
+              <p className="text-white font-semibold text-lg">{teacherClass.name}</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Classes List */}
-      <div className="p-4 space-y-3">
-        <h2 className="text-sm font-medium text-slate-500 mb-2">Daftar Kelas</h2>
-        
-        {MOCK_CLASSES.map((kelas) => {
-          const studentCount = getStudentsInClass(kelas.id).length;
-          
-          return (
-            <Link href={`/kelas-guru/${kelas.id}`} key={kelas.id} className="block">
-              <div className={clsx(
-                "bg-gradient-to-r rounded-xl p-4 shadow-md hover:shadow-lg transition",
-                kelas.color
-              )}>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <span className="inline-block px-2 py-0.5 bg-white/20 text-white text-[10px] font-medium rounded-full mb-2">
-                      {kelas.subject}
-                    </span>
-                    <h3 className="text-white font-bold text-lg">{kelas.name}</h3>
-                    <p className="text-white/80 text-sm mt-1">
-                      {kelas.school}
-                    </p>
-                    <div className="flex items-center gap-3 mt-2">
-                      <div className="flex items-center gap-1 text-white/70 text-xs">
-                        <UserGroupIcon className="size-4" />
-                        <span>{studentCount} siswa</span>
-                      </div>
-                      <div className="flex items-center gap-1 text-white/70 text-xs">
-                        <ClipboardDocumentCheckIcon className="size-4" />
-                        <span>Presensi</span>
-                      </div>
-                    </div>
+      {/* Main Class Card */}
+      <div className="p-4">
+        <Link href={`/kelas-guru/${teacherClass.id}`} className="block">
+          <div className={clsx(
+            "bg-gradient-to-r rounded-xl p-5 shadow-lg hover:shadow-xl transition",
+            teacherClass.color
+          )}>
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <span className="inline-block px-2 py-0.5 bg-white/20 text-white text-[10px] font-medium rounded-full mb-2">
+                  {teacherClass.subject}
+                </span>
+                <h3 className="text-white font-bold text-xl">{teacherClass.name}</h3>
+                <p className="text-white/80 text-sm mt-1">
+                  {teacherClass.school}
+                </p>
+                
+                {/* Stats */}
+                <div className="flex items-center gap-4 mt-4">
+                  <div className="flex items-center gap-1.5 text-white/90 text-sm">
+                    <UserGroupIcon className="size-5" />
+                    <span>{studentCount} Siswa</span>
                   </div>
-                  <div className="bg-white/20 rounded-full p-2">
-                    <ChevronRightIcon className="size-5 text-white" />
+                  <div className="flex items-center gap-1.5 text-white/90 text-sm">
+                    <BookOpenIcon className="size-5" />
+                    <span>{MOCK_MATERIALS.length} Materi</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-white/90 text-sm">
+                    <ClipboardDocumentListIcon className="size-5" />
+                    <span>{MOCK_EXERCISES.length} Latihan</span>
                   </div>
                 </div>
               </div>
-            </Link>
-          );
-        })}
+              <div className="bg-white/20 rounded-full p-3">
+                <ChevronRightIcon className="size-6 text-white" />
+              </div>
+            </div>
+          </div>
+        </Link>
+        
+        {/* Info Text */}
+        <div className="mt-4 bg-slate-50 rounded-lg p-3 border border-slate-100">
+          <p className="text-xs text-slate-500 text-center">
+            Klik pada kelas untuk mengelola presensi, materi, dan latihan soal
+          </p>
+        </div>
       </div>
     </div>
   );
 }
+
