@@ -8,6 +8,7 @@ import {
   UserGroupIcon,
   BookOpenIcon,
   ClipboardDocumentListIcon,
+  PlusIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { MOCK_CLASSES, getStudentsInClass, MOCK_MATERIALS, MOCK_EXERCISES } from "@/constants/student-data";
@@ -92,11 +93,10 @@ export default function KelasGuruListPage() {
         {/* Info Text */}
         <div className="mt-4 bg-slate-50 rounded-lg p-3 border border-slate-100">
           <p className="text-xs text-slate-500 text-center">
-            Klik pada kelas untuk mengelola presensi, materi, dan latihan soal
+            Klik pada kelas untuk mengelola siswa, presensi, materi, dan latihan soal
           </p>
         </div>
       </div>
     </div>
   );
 }
-
