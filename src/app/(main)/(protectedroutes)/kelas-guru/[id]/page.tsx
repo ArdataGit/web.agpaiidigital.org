@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   ChevronLeftIcon,
@@ -18,15 +18,14 @@ import {
   PlayIcon,
   TrashIcon,
   PencilIcon,
-  ChatBubbleBottomCenterTextIcon,
   ChatBubbleLeftIcon,
   PhotoIcon,
   VideoCameraIcon,
 } from "@heroicons/react/24/outline";
 import { CheckCircleIcon as CheckCircleSolidIcon } from "@heroicons/react/24/solid";
 import clsx from "clsx";
-import { useEffect } from "react";
 import Link from "next/link";
+import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import {
   getClassById,
   getStudentsInClass,
@@ -44,11 +43,8 @@ import {
   StudentInClass,
 } from "@/constants/student-data";
 
-import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
-
 type TabType = "siswa" | "presensi" | "materi" | "latihan" | "diskusi";
 
-// Status options for attendance
 const STATUS_OPTIONS: {
   value: AttendanceStatus;
   label: string;
@@ -81,197 +77,51 @@ const STATUS_OPTIONS: {
   },
 ];
 
+type StudentProfile = {
+  nisn: string;
+  school_place: string;
+};
+
+type Student = {
+  id: number;
+  name: string;
+  email?: string;
+  profile: StudentProfile | null;
+};
+
+type ClassDetail = {
+  id: number;
+  name: string;
+  subject: string;
+  school_place: string;
+  total_students: number;
+  is_active: boolean;
+};
+
 export default function KelasGuruDetailPage() {
   const params = useParams();
   const router = useRouter();
   const classId = Number(params.id);
+
+  // States
   const [classInfo, setClassInfo] = useState<ClassDetail | null>(null);
   const [loadingClass, setLoadingClass] = useState(true);
-
-  const fetchAttendance = async (date: string) => {
-    try {
-      const token = localStorage.getItem("access_token");
-
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/classes/${classId}/attendance?date=${date}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!res.ok) throw new Error("Gagal fetch absensi");
-
-      const json = await res.json();
-
-      /**
-       * json.data berbentuk object:
-       * {
-       *   "205078": { student_id: 205078, status: "hadir", ... }
-       * }
-       */
-      const newData: { [studentId: number]: AttendanceStatus } = {};
-
-      Object.values(json.data || {}).forEach((item: any) => {
-        if (item.student_id && item.status) {
-          newData[item.student_id] = item.status;
-        }
-      });
-
-      setAttendanceData(newData);
-    } catch (e) {
-      console.error("Fetch absensi gagal", e);
-      setAttendanceData({});
-    }
-  };
-
-  const fetchMaterials = async () => {
-    try {
-      const token = localStorage.getItem("access_token");
-
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/classes/${classId}/materials`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!res.ok) throw new Error("Gagal fetch materi");
-
-      const json = await res.json();
-      setMaterials(json.data || []);
-    } catch (e) {
-      console.error("Fetch materi gagal", e);
-      setMaterials([]);
-    }
-  };
-
-  useEffect(() => {
-    if (!classId) return;
-
-    const fetchStudents = async () => {
-      try {
-        const token = localStorage.getItem("access_token");
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/classes/${classId}/students`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        const json = await res.json();
-        setStudents(json.data || []);
-      } catch (e) {
-        console.error("Gagal fetch siswa", e);
-      } finally {
-        setLoadingStudents(false);
-      }
-    };
-
-    fetchStudents();
-  }, [classId]);
-
-  type StudentProfile = {
-    nisn: string;
-    school_place: string;
-  };
-
-  type Student = {
-    id: number;
-    name: string;
-    email?: string;
-    profile: StudentProfile | null;
-  };
-
-  type ClassDetail = {
-    id: number;
-    name: string;
-    subject: string;
-    school_place: string;
-    total_students: number;
-    is_active: boolean;
-  };
-
   const [students, setStudents] = useState<Student[]>([]);
   const [loadingStudents, setLoadingStudents] = useState(true);
-
   const [activeTab, setActiveTab] = useState<TabType>("siswa");
-
   const [selectedDate, setSelectedDate] = useState(() => {
     const today = new Date();
     return today.toISOString().split("T")[0];
   });
   const [showDatePicker, setShowDatePicker] = useState(false);
-
-  useEffect(() => {
-    if (activeTab === "presensi") {
-      fetchAttendance(selectedDate);
-    }
-  }, [activeTab, selectedDate]);
-
-  useEffect(() => {
-    if (activeTab === "materi") {
-      fetchMaterials();
-    }
-  }, [activeTab]);
-
-  useEffect(() => {
-    if (activeTab !== "diskusi") return;
-
-    const fetchDiscussions = async () => {
-      try {
-        setDiscussionsLoading(true);
-        const token = localStorage.getItem("access_token");
-
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/discussions?class_id=${classId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (!res.ok) throw new Error("Gagal fetch diskusi");
-
-        const json = await res.json();
-        setDiscussions(json.data || []);
-      } catch (err) {
-        console.error(err);
-        setDiscussions([]);
-      } finally {
-        setDiscussionsLoading(false);
-      }
-    };
-
-    fetchDiscussions();
-  }, [activeTab, classId]);
-
-  // Local attendance state
   const [attendanceData, setAttendanceData] = useState<{
     [studentId: number]: AttendanceStatus;
-  }>(() => {
-    const initial: { [studentId: number]: AttendanceStatus } = {};
-    const records = getAttendanceByClassAndDate(classId, selectedDate);
-    records.forEach((record) => {
-      initial[record.studentId] = record.status;
-    });
-    return initial;
-  });
-
+  }>({});
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-
-  // Local materials & exercises state (for demo)
   const [materials, setMaterials] = useState<Material[]>([]);
-  const [exercises, setExercises] = useState<Exercise[]>(MOCK_EXERCISES);
-
-  // Discussion state
+  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [loadingExercises, setLoadingExercises] = useState(true);
   const [discussions, setDiscussions] = useState<any[]>([]);
   const [discussionsLoading, setDiscussionsLoading] = useState(false);
   const [newDiscussion, setNewDiscussion] = useState("");
@@ -282,24 +132,430 @@ export default function KelasGuruDetailPage() {
   const [posting, setPosting] = useState(false);
   const [replyText, setReplyText] = useState<{ [key: number]: string }>({});
   const [replying, setReplying] = useState<number | null>(null);
-  const [expandedReplies, setExpandedReplies] = useState<{ [key: number]: boolean }>({});
-
-  // Student management state
+  const [expandedReplies, setExpandedReplies] = useState<{
+    [key: number]: boolean;
+  }>({});
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
   const [studentSearch, setStudentSearch] = useState("");
   const [studentSearchResults, setStudentSearchResults] = useState<
     RegisteredStudent[]
   >([]);
+  const [showAddMaterialModal, setShowAddMaterialModal] = useState(false);
+  const [showAddExerciseModal, setShowAddExerciseModal] = useState(false);
+  const [showExerciseDetailModal, setShowExerciseDetailModal] = useState(false);
+  const [showRepostExerciseModal, setShowRepostExerciseModal] = useState(false);
+  const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(
+    null
+  );
+  const [newMaterial, setNewMaterial] = useState({
+    title: "",
+    description: "",
+    content: "",
+    type: "pdf" as "pdf" | "video",
+    fileUrl: "",
+    duration: "",
+  });
+  const [newExercise, setNewExercise] = useState({
+    title: "",
+    description: "",
+    duration: 10,
+    deadline: "",
+  });
+  const [selectedQuestions, setSelectedQuestions] = useState<string[]>([]);
+  const [showSelectQuestionModal, setShowSelectQuestionModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [bankQuestions, setBankQuestions] = useState<Question[]>([]);
+  const [loadingBankQuestions, setLoadingBankQuestions] = useState(false);
+  const [showEditMaterialModal, setShowEditMaterialModal] = useState(false);
+  const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
+  const [editMaterialData, setEditMaterialData] = useState({
+    title: "",
+    description: "",
+    type: "pdf" as "pdf" | "video",
+    duration: "",
+  });
+  const [showEditExerciseModal, setShowEditExerciseModal] = useState(false);
+  const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
+  const [editExerciseData, setEditExerciseData] = useState({
+    title: "",
+    description: "",
+    duration: 10,
+    deadline: "",
+  });
 
-  // Search students handler - filter by class school
+  // Helper Functions
+  const normalizeQuestion = (q: any) => ({
+    id: String(q.id),
+    question: q.question,
+    options: q.options,
+    correctAnswer: q.correct_answer,
+    difficulty: q.difficulty,
+    subject: q.subject,
+  });
+
+  const normalizeYoutubeEmbed = (url: string) => {
+    if (!url) return null;
+    let videoId =
+      url.split("v=")[1]?.split("&")[0] ||
+      url.split("youtu.be/")[1]?.split("?")[0];
+    return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
+  };
+
+  const toggleReplies = (discussionId: number) => {
+    setExpandedReplies((prev) => ({
+      ...prev,
+      [discussionId]: !prev[discussionId],
+    }));
+  };
+
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case "mudah":
+        return "bg-green-100 text-green-700";
+      case "sedang":
+        return "bg-yellow-100 text-yellow-700";
+      case "sulit":
+        return "bg-red-100 text-red-700";
+      default:
+        return "bg-slate-100 text-slate-700";
+    }
+  };
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("id-ID", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  // Fetch Functions
+  const fetchClassDetail = async () => {
+    try {
+      const token = localStorage.getItem("access_token");
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/classes/${classId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (!res.ok) throw new Error("Gagal fetch kelas");
+      const json = await res.json();
+      setClassInfo(json.data);
+    } catch (e) {
+      console.error("Gagal fetch detail kelas", e);
+      setClassInfo(null);
+    } finally {
+      setLoadingClass(false);
+    }
+  };
+
+  const fetchStudents = async () => {
+    try {
+      const token = localStorage.getItem("access_token");
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/classes/${classId}/students`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      const json = await res.json();
+      setStudents(json.data || []);
+    } catch (e) {
+      console.error("Gagal fetch siswa", e);
+    } finally {
+      setLoadingStudents(false);
+    }
+  };
+
+  const fetchAttendance = async (date: string) => {
+    try {
+      const token = localStorage.getItem("access_token");
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/classes/${classId}/attendance?date=${date}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (!res.ok) throw new Error("Gagal fetch absensi");
+      const json = await res.json();
+      const newData: { [studentId: number]: AttendanceStatus } = {};
+      Object.values(json.data || {}).forEach((item: any) => {
+        if (item.student_id && item.status) {
+          newData[item.student_id] = item.status;
+        }
+      });
+      setAttendanceData(newData);
+    } catch (e) {
+      console.error("Fetch absensi gagal", e);
+      setAttendanceData({});
+    }
+  };
+
+  const fetchMaterials = async () => {
+    try {
+      const token = localStorage.getItem("access_token");
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/classes/${classId}/materials`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (!res.ok) throw new Error("Gagal fetch materi");
+      const json = await res.json();
+      setMaterials(json.data || []);
+    } catch (e) {
+      console.error("Fetch materi gagal", e);
+      setMaterials([]);
+    }
+  };
+
+  const fetchExercises = async () => {
+    try {
+      setLoadingExercises(true);
+      const token = localStorage.getItem("access_token");
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/classes/${classId}/exercises`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (!res.ok) throw new Error("Gagal fetch latihan");
+      const json = await res.json();
+      setExercises(json.data || []);
+    } catch (e) {
+      console.error("Fetch latihan gagal", e);
+      setExercises([]);
+    } finally {
+      setLoadingExercises(false);
+    }
+  };
+
+  const fetchDiscussions = async () => {
+    try {
+      setDiscussionsLoading(true);
+      const token = localStorage.getItem("access_token");
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/discussions?class_id=${classId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (!res.ok) throw new Error("Gagal fetch diskusi");
+      const json = await res.json();
+      setDiscussions(json.data || []);
+    } catch (err) {
+      console.error(err);
+      setDiscussions([]);
+    } finally {
+      setDiscussionsLoading(false);
+    }
+  };
+
+  const fetchBankQuestions = async () => {
+    try {
+      setLoadingBankQuestions(true);
+      const token = localStorage.getItem("access_token");
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/classedu-questions`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      const json = await res.json();
+      const mapped = (json.data || []).map((item: any) => ({
+        id: String(item.id),
+        question: item.question,
+        options: item.options,
+        correctAnswer: item.correct_answer,
+        difficulty: item.difficulty,
+        subject: item.subject,
+      }));
+      setBankQuestions(mapped);
+    } catch (e) {
+      console.error("Gagal fetch bank soal", e);
+      setBankQuestions([]);
+    } finally {
+      setLoadingBankQuestions(false);
+    }
+  };
+
+  // Handler Functions
+  const handleAddDiscussion = async () => {
+    if (!newDiscussion.trim() && selectedImages.length === 0 && !videoUrl)
+      return;
+    try {
+      setPosting(true);
+      const token = localStorage.getItem("access_token");
+      const formData = new FormData();
+      formData.append("class_id", String(classId));
+      formData.append("content", newDiscussion);
+      if (videoUrl) {
+        formData.append("youtube_url", videoUrl);
+      }
+      if (selectedImages.length > 0) {
+        formData.append("image", selectedImages[0]);
+      }
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/discussions`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        }
+      );
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        console.error("API Error:", errorData);
+        throw new Error(errorData.message || "Gagal mengirim diskusi");
+      }
+      const json = await res.json();
+      setDiscussions((prev) => [json.data, ...prev]);
+      setNewDiscussion("");
+      setSelectedImages([]);
+      setImagePreviews([]);
+      setVideoUrl("");
+      setShowAddDiscussionModal(false);
+    } catch (err: any) {
+      console.error("Error detail:", err);
+      alert(err.message || "Gagal mengirim diskusi");
+    } finally {
+      setPosting(false);
+    }
+  };
+
+  const handleSendReply = async (discussionId: number) => {
+    if (!replyText[discussionId]?.trim()) return;
+    try {
+      setReplying(discussionId);
+      const token = localStorage.getItem("access_token");
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/discussions/${discussionId}/reply`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            content: replyText[discussionId],
+          }),
+        }
+      );
+      if (!res.ok) throw new Error("Gagal kirim balasan");
+      const json = await res.json();
+      setDiscussions((prev) =>
+        prev.map((d) =>
+          d.id === discussionId
+            ? { ...d, replies: [...(d.replies || []), json.data] }
+            : d
+        )
+      );
+      setReplyText((prev) => ({ ...prev, [discussionId]: "" }));
+    } catch (err) {
+      alert("Gagal mengirim balasan");
+    } finally {
+      setReplying(null);
+    }
+  };
+
+  const handleRepostExercise = (
+    publicExercise: (typeof PUBLIC_EXERCISES)[0]
+  ) => {
+    const newExercise: Exercise = {
+      id: Date.now(),
+      title: publicExercise.title,
+      description: publicExercise.description,
+      totalQuestions: publicExercise.totalQuestions,
+      duration: publicExercise.duration,
+      deadline: publicExercise.deadline,
+      isCompleted: false,
+      questions: publicExercise.questions ? [...publicExercise.questions] : [],
+      repostedFrom: publicExercise.authorName,
+      originalId: publicExercise.id,
+    };
+    setExercises([newExercise, ...exercises]);
+    setShowRepostExerciseModal(false);
+  };
+
+  const handleEditMaterial = (material: Material) => {
+    setEditingMaterial(material);
+    setEditMaterialData({
+      title: material.title,
+      description: material.description,
+      type: material.type,
+      duration: material.duration,
+    });
+    setShowEditMaterialModal(true);
+  };
+
+  const handleSaveEditMaterial = () => {
+    if (
+      !editingMaterial ||
+      !editMaterialData.title ||
+      !editMaterialData.description
+    )
+      return;
+    setMaterials((prev) =>
+      prev.map((m) =>
+        m.id === editingMaterial.id ? { ...m, ...editMaterialData } : m
+      )
+    );
+    setShowEditMaterialModal(false);
+    setEditingMaterial(null);
+  };
+
+  const handleEditExercise = (exercise: Exercise) => {
+    setEditingExercise(exercise);
+    setEditExerciseData({
+      title: exercise.title,
+      description: exercise.description,
+      duration: exercise.duration,
+      deadline: exercise.deadline,
+    });
+    setShowEditExerciseModal(true);
+  };
+
+  const handleSaveEditExercise = () => {
+    if (
+      !editingExercise ||
+      !editExerciseData.title ||
+      !editExerciseData.description
+    )
+      return;
+    setExercises((prev) =>
+      prev.map((e) =>
+        e.id === editingExercise.id ? { ...e, ...editExerciseData } : e
+      )
+    );
+    setShowEditExerciseModal(false);
+    setEditingExercise(null);
+  };
+
   const handleStudentSearch = async (query: string) => {
     setStudentSearch(query);
-
     if (query.length < 2) {
       setStudentSearchResults([]);
       return;
     }
-
     try {
       const token = localStorage.getItem("access_token");
       const res = await fetch(
@@ -310,7 +566,6 @@ export default function KelasGuruDetailPage() {
           },
         }
       );
-
       const json = await res.json();
       setStudentSearchResults(json.data || []);
     } catch (e) {
@@ -321,7 +576,6 @@ export default function KelasGuruDetailPage() {
   const addStudentToClass = async (student: Student) => {
     try {
       const token = localStorage.getItem("access_token");
-
       await fetch(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/classes/${classId}/students`,
         {
@@ -335,8 +589,6 @@ export default function KelasGuruDetailPage() {
           }),
         }
       );
-
-      // update UI
       setStudents((prev) => [...prev, student]);
       setStudentSearch("");
       setStudentSearchResults([]);
@@ -347,10 +599,8 @@ export default function KelasGuruDetailPage() {
 
   const removeStudentFromClass = async (studentId: number) => {
     if (!confirm("Hapus siswa dari kelas?")) return;
-
     try {
       const token = localStorage.getItem("access_token");
-
       await fetch(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/classes/${classId}/students/${studentId}`,
         {
@@ -360,90 +610,12 @@ export default function KelasGuruDetailPage() {
           },
         }
       );
-
       setStudents((prev) => prev.filter((s) => s.id !== studentId));
     } catch (e) {
       console.error("Gagal hapus siswa", e);
     }
   };
 
-  // Modal states
-  const [showAddMaterialModal, setShowAddMaterialModal] = useState(false);
-  const [showAddExerciseModal, setShowAddExerciseModal] = useState(false);
-  const [showExerciseDetailModal, setShowExerciseDetailModal] = useState(false);
-  const [showRepostExerciseModal, setShowRepostExerciseModal] = useState(false);
-  const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(
-    null
-  );
-
-  // New material form state
-  const [newMaterial, setNewMaterial] = useState({
-    title: "",
-    description: "",
-    content: "",
-    type: "pdf" as "pdf" | "video",
-    fileUrl: "",
-    duration: "",
-  });
-
-  // New exercise form state
-  const [newExercise, setNewExercise] = useState({
-    title: "",
-    description: "",
-    duration: 10,
-    deadline: "",
-  });
-
-  // Bank soal mock data - nanti ambil dari API
-  const MOCK_BANK_QUESTIONS = [
-    {
-      id: "1",
-      question: "Apa rukun Islam yang pertama?",
-      options: ["Shalat", "Syahadat", "Puasa", "Zakat"],
-      correctAnswer: 1,
-      subject: "Pendidikan Agama Islam",
-      difficulty: "mudah" as const,
-    },
-    {
-      id: "2",
-      question: "Berapa jumlah rakaat shalat Subuh?",
-      options: ["2 rakaat", "3 rakaat", "4 rakaat", "5 rakaat"],
-      correctAnswer: 0,
-      subject: "Pendidikan Agama Islam",
-      difficulty: "mudah" as const,
-    },
-    {
-      id: "3",
-      question: "Apa nama malaikat yang bertugas menyampaikan wahyu?",
-      options: ["Mikail", "Jibril", "Israfil", "Izrail"],
-      correctAnswer: 1,
-      subject: "Pendidikan Agama Islam",
-      difficulty: "sedang" as const,
-    },
-    {
-      id: "4",
-      question: "Berapa jumlah surat dalam Al-Quran?",
-      options: ["110", "114", "120", "124"],
-      correctAnswer: 1,
-      subject: "Pendidikan Agama Islam",
-      difficulty: "sedang" as const,
-    },
-    {
-      id: "5",
-      question: "Apa nama kitab suci umat Islam?",
-      options: ["Taurat", "Injil", "Zabur", "Al-Quran"],
-      correctAnswer: 3,
-      subject: "Pendidikan Agama Islam",
-      difficulty: "mudah" as const,
-    },
-  ];
-
-  // State untuk modal detail latihan
-  const [selectedQuestions, setSelectedQuestions] = useState<string[]>([]);
-  const [showSelectQuestionModal, setShowSelectQuestionModal] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-
-  // Handlers
   const handleDateChange = (newDate: string) => {
     setSelectedDate(newDate);
     setShowDatePicker(false);
@@ -463,9 +635,7 @@ export default function KelasGuruDetailPage() {
     try {
       setIsSaving(true);
       setSaveSuccess(false);
-
       const token = localStorage.getItem("access_token");
-
       await fetch(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/classes/${classId}/attendance`,
         {
@@ -480,7 +650,6 @@ export default function KelasGuruDetailPage() {
           }),
         }
       );
-
       setSaveSuccess(true);
     } catch (e) {
       console.error("Gagal simpan presensi", e);
@@ -492,10 +661,8 @@ export default function KelasGuruDetailPage() {
 
   const handleAddMaterial = async () => {
     if (!newMaterial.title || !newMaterial.description) return;
-
     try {
       const token = localStorage.getItem("access_token");
-
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/classes/${classId}/materials`,
         {
@@ -513,11 +680,8 @@ export default function KelasGuruDetailPage() {
           }),
         }
       );
-
       if (!res.ok) throw new Error("Gagal simpan materi");
-
-      await fetchMaterials(); // refresh dari server
-
+      await fetchMaterials();
       setShowAddMaterialModal(false);
       setNewMaterial({
         title: "",
@@ -535,10 +699,8 @@ export default function KelasGuruDetailPage() {
 
   const handleDeleteMaterial = async (id: number) => {
     if (!confirm("Hapus materi ini?")) return;
-
     try {
       const token = localStorage.getItem("access_token");
-
       await fetch(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/classes/materials/${id}`,
         {
@@ -548,166 +710,190 @@ export default function KelasGuruDetailPage() {
           },
         }
       );
-
       fetchMaterials();
     } catch (e) {
       console.error("Gagal hapus materi", e);
     }
   };
 
-  const handleAddExercise = () => {
+  const handleAddExercise = async () => {
     if (!newExercise.title || !newExercise.description || !newExercise.deadline)
       return;
-
-    const exercise: Exercise = {
-      id: Date.now(),
-      title: newExercise.title,
-      description: newExercise.description,
-      totalQuestions: 0,
-      duration: newExercise.duration,
-      deadline: newExercise.deadline,
-      isCompleted: false,
-      questions: [],
-    };
-
-    setExercises([exercise, ...exercises]);
-    setNewExercise({ title: "", description: "", duration: 10, deadline: "" });
-    setShowAddExerciseModal(false);
-  };
-
-  const handleDeleteExercise = (id: number) => {
-    if (confirm("Hapus latihan ini?")) {
-      setExercises(exercises.filter((e) => e.id !== id));
-    }
-  };
-  
-  // Discussion handlers
-  const toggleReplies = (discussionId: number) => {
-    setExpandedReplies((prev) => ({
-      ...prev,
-      [discussionId]: !prev[discussionId],
-    }));
-  };
-
-  const normalizeYoutubeEmbed = (url?: string) => {
-    if (!url) return null;
-    if (url.includes("youtube.com/embed/")) return url;
-    if (url.includes("youtube.com/watch")) {
-      const videoId = url.split("v=")[1]?.split("&")[0];
-      return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
-    }
-    if (url.includes("youtu.be/")) {
-      const videoId = url.split("youtu.be/")[1]?.split("?")[0];
-      return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
-    }
-    if (url.includes("youtube.com/live/")) {
-      const videoId = url.split("youtube.com/live/")[1]?.split("?")[0];
-      return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
-    }
-    return null;
-  };
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-    const fileArray = Array.from(files);
-    setSelectedImages((prev) => [...prev, ...fileArray]);
-    const previews = fileArray.map((file) => URL.createObjectURL(file));
-    setImagePreviews((prev) => [...prev, ...previews]);
-    e.target.value = "";
-  };
-
-  const handleAddDiscussion = async () => {
-    if (!newDiscussion.trim() && selectedImages.length === 0 && !videoUrl) return;
-
     try {
-      setPosting(true);
       const token = localStorage.getItem("access_token");
-      const formData = new FormData();
-
-      formData.append("class_id", String(classId));
-      formData.append("content", newDiscussion);
-
-      if (videoUrl) {
-        formData.append("youtube_url", videoUrl);
-      }
-
-      if (selectedImages.length > 0) {
-        formData.append("image", selectedImages[0]);
-      }
-
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/discussions`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/classes/${classId}/exercises`,
         {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        }
-      );
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        console.error("API Error:", errorData);
-        throw new Error(errorData.message || "Gagal mengirim diskusi");
-      }
-
-      const json = await res.json();
-      setDiscussions((prev) => [json.data, ...prev]);
-      setNewDiscussion("");
-      setSelectedImages([]);
-      setImagePreviews([]);
-      setVideoUrl("");
-      setShowAddDiscussionModal(false);
-    } catch (err: any) {
-      console.error("Error detail:", err);
-      alert(err.message || "Gagal mengirim diskusi");
-    } finally {
-      setPosting(false);
-    }
-  };
-
-  const handleSendReply = async (discussionId: number) => {
-    if (!replyText[discussionId]?.trim()) return;
-
-    try {
-      setReplying(discussionId);
-      const token = localStorage.getItem("access_token");
-
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/discussions/${discussionId}/reply`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            content: replyText[discussionId],
+            title: newExercise.title,
+            description: newExercise.description,
+            duration: newExercise.duration,
+            deadline: newExercise.deadline,
           }),
         }
       );
-
-      if (!res.ok) throw new Error("Gagal kirim balasan");
-
-      const json = await res.json();
-      setDiscussions((prev) =>
-        prev.map((d) =>
-          d.id === discussionId
-            ? { ...d, replies: [...(d.replies || []), json.data] }
-            : d
-        )
-      );
-      setReplyText((prev) => ({ ...prev, [discussionId]: "" }));
-    } catch (err) {
-      alert("Gagal mengirim balasan");
-    } finally {
-      setReplying(null);
+      if (!res.ok) throw new Error("Gagal menambah latihan");
+      setShowAddExerciseModal(false);
+      setNewExercise({
+        title: "",
+        description: "",
+        duration: 10,
+        deadline: "",
+      });
+      await fetchExercises();
+    } catch (e) {
+      console.error(e);
+      alert("Gagal menambahkan latihan");
     }
   };
 
-  // Simple initials avatar component
+  const handleDeleteExercise = async (exerciseId: number) => {
+    if (!confirm("Hapus latihan ini?")) return;
+    try {
+      const token = localStorage.getItem("access_token");
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/classes/exercises/${exerciseId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (!res.ok) throw new Error("Gagal hapus latihan");
+      await fetchExercises();
+    } catch (e) {
+      console.error("Gagal hapus latihan", e);
+      alert("Gagal menghapus latihan");
+    }
+  };
+
+  const handleOpenExerciseDetail = (exercise: Exercise) => {
+    setSelectedExercise({
+      ...exercise,
+      questions: (exercise.questions || []).map(normalizeQuestion),
+    });
+    setSelectedQuestions(
+      exercise.questions?.map((q: any) => String(q.id)) || []
+    );
+    setShowExerciseDetailModal(true);
+  };
+
+  const handleToggleQuestion = (questionId: string) => {
+    if (selectedQuestions.includes(questionId)) {
+      setSelectedQuestions(selectedQuestions.filter((id) => id !== questionId));
+    } else {
+      setSelectedQuestions([...selectedQuestions, questionId]);
+    }
+  };
+
+  const handleRemoveQuestion = (questionId: string) => {
+    if (confirm("Yakin ingin menghapus soal ini dari latihan?")) {
+      setSelectedQuestions(selectedQuestions.filter((id) => id !== questionId));
+    }
+  };
+
+  const handleSaveExerciseQuestions = async () => {
+    if (!selectedExercise) return;
+    try {
+      const token = localStorage.getItem("access_token");
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/classedu-exercises/${selectedExercise.id}/questions`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            question_ids: selectedQuestions.map(Number),
+          }),
+        }
+      );
+      if (!res.ok) throw new Error("Gagal menyimpan soal latihan");
+      setShowExerciseDetailModal(false);
+      setSelectedExercise(null);
+      setSelectedQuestions([]);
+      await fetchExercises();
+    } catch (e) {
+      console.error(e);
+      alert("Gagal menyimpan soal ke latihan");
+    }
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setSelectedImages(files);
+    const previews = files.map((file) => URL.createObjectURL(file));
+    setImagePreviews(previews);
+  };
+
+  // UseEffects
+  useEffect(() => {
+    if (!classId) return;
+    fetchClassDetail();
+    fetchStudents();
+  }, [classId]);
+
+  useEffect(() => {
+    if (activeTab === "presensi") {
+      fetchAttendance(selectedDate);
+    }
+  }, [activeTab, selectedDate]);
+
+  useEffect(() => {
+    if (activeTab === "materi") {
+      fetchMaterials();
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === "latihan") {
+      fetchExercises();
+    }
+  }, [activeTab, classId]);
+
+  useEffect(() => {
+    if (activeTab === "diskusi") {
+      fetchDiscussions();
+    }
+  }, [activeTab, classId]);
+
+  useEffect(() => {
+    if (showSelectQuestionModal) {
+      fetchBankQuestions();
+    }
+  }, [showSelectQuestionModal]);
+
+  // Memoized values
+  const stats = useMemo(() => {
+    const values = Object.values(attendanceData);
+    return {
+      hadir: values.filter((v) => v === "hadir").length,
+      tidakHadir: values.filter((v) => v === "tidak_hadir").length,
+      izin: values.filter((v) => v === "izin").length,
+      sakit: values.filter((v) => v === "sakit").length,
+      total: students.length,
+      filled: values.length,
+    };
+  }, [attendanceData, students.length]);
+
+  const filteredBankQuestions = bankQuestions.filter((q) =>
+    q.question.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const exerciseQuestions = selectedExercise?.questions || [];
+
+  const availableQuestions = filteredBankQuestions.filter(
+    (q) => !selectedQuestions.includes(q.id)
+  );
+
+  // InitialsAvatar Component
   const InitialsAvatar = ({
     name,
     size = "md",
@@ -744,221 +930,6 @@ export default function KelasGuruDetailPage() {
       </div>
     );
   };
-  
-  // Repost exercise handler
-  const handleRepostExercise = (publicExercise: typeof PUBLIC_EXERCISES[0]) => {
-    const newExercise: Exercise = {
-      id: Date.now(),
-      title: publicExercise.title,
-      description: publicExercise.description,
-      totalQuestions: publicExercise.totalQuestions,
-      duration: publicExercise.duration,
-      deadline: publicExercise.deadline,
-      isCompleted: false,
-      questions: publicExercise.questions ? [...publicExercise.questions] : [],
-      repostedFrom: publicExercise.authorName,
-      originalId: publicExercise.id,
-    };
-    setExercises([newExercise, ...exercises]);
-    setShowRepostExerciseModal(false);
-  };
-  
-  // Edit Material state & handlers
-  const [showEditMaterialModal, setShowEditMaterialModal] = useState(false);
-  const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
-  const [editMaterialData, setEditMaterialData] = useState({
-    title: "",
-    description: "",
-    type: "pdf" as "pdf" | "video",
-    duration: "",
-  });
-  
-  const handleEditMaterial = (material: Material) => {
-    setEditingMaterial(material);
-    setEditMaterialData({
-      title: material.title,
-      description: material.description,
-      type: material.type,
-      duration: material.duration,
-    });
-    setShowEditMaterialModal(true);
-  };
-  
-  const handleSaveEditMaterial = () => {
-    if (!editingMaterial || !editMaterialData.title || !editMaterialData.description) return;
-    setMaterials(prev => prev.map(m => 
-      m.id === editingMaterial.id 
-        ? { ...m, ...editMaterialData } 
-        : m
-    ));
-    setShowEditMaterialModal(false);
-    setEditingMaterial(null);
-  };
-  
-  // Edit Exercise state & handlers
-  const [showEditExerciseModal, setShowEditExerciseModal] = useState(false);
-  const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
-  const [editExerciseData, setEditExerciseData] = useState({
-    title: "",
-    description: "",
-    duration: 10,
-    deadline: "",
-  });
-  
-  const handleEditExercise = (exercise: Exercise) => {
-    setEditingExercise(exercise);
-    setEditExerciseData({
-      title: exercise.title,
-      description: exercise.description,
-      duration: exercise.duration,
-      deadline: exercise.deadline,
-    });
-    setShowEditExerciseModal(true);
-  };
-  
-  const handleSaveEditExercise = () => {
-    if (!editingExercise || !editExerciseData.title || !editExerciseData.description) return;
-    setExercises(prev => prev.map(e => 
-      e.id === editingExercise.id 
-        ? { ...e, ...editExerciseData } 
-        : e
-    ));
-    setShowEditExerciseModal(false);
-    setEditingExercise(null);
-  };
-
-  // Handler untuk modal detail latihan
-  const handleOpenExerciseDetail = (exercise: Exercise) => {
-    setSelectedExercise(exercise);
-    setSelectedQuestions(exercise.questions?.map((q) => String(q.id)) || []);
-    setShowExerciseDetailModal(true);
-  };
-
-  const handleToggleQuestion = (questionId: string) => {
-    if (selectedQuestions.includes(questionId)) {
-      setSelectedQuestions(selectedQuestions.filter((id) => id !== questionId));
-    } else {
-      setSelectedQuestions([...selectedQuestions, questionId]);
-    }
-  };
-
-  const handleRemoveQuestion = (questionId: string) => {
-    if (confirm("Yakin ingin menghapus soal ini dari latihan?")) {
-      setSelectedQuestions(selectedQuestions.filter((id) => id !== questionId));
-    }
-  };
-
-  const handleSaveExerciseQuestions = () => {
-    if (!selectedExercise) return;
-
-    // Update exercise dengan soal yang dipilih
-    const updatedExercises = exercises.map((ex) => {
-      if (ex.id === selectedExercise.id) {
-        const selectedQuestionsData = MOCK_BANK_QUESTIONS.filter((q) =>
-          selectedQuestions.includes(q.id)
-        ).map((q, idx) => ({
-          id: idx + 1,
-          question: q.question,
-          options: q.options,
-          correctAnswer: q.correctAnswer,
-        }));
-
-        return {
-          ...ex,
-          questions: selectedQuestionsData,
-          totalQuestions: selectedQuestionsData.length,
-        };
-      }
-      return ex;
-    });
-
-    setExercises(updatedExercises);
-    setShowExerciseDetailModal(false);
-    setSelectedExercise(null);
-    setSelectedQuestions([]);
-  };
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case "mudah":
-        return "bg-green-100 text-green-700";
-      case "sedang":
-        return "bg-yellow-100 text-yellow-700";
-      case "sulit":
-        return "bg-red-100 text-red-700";
-      default:
-        return "bg-slate-100 text-slate-700";
-    }
-  };
-
-  // Filter soal berdasarkan search
-  const filteredBankQuestions = MOCK_BANK_QUESTIONS.filter((q) =>
-    q.question.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  // Soal yang sudah dipilih untuk latihan ini
-  const exerciseQuestions = MOCK_BANK_QUESTIONS.filter((q) =>
-    selectedQuestions.includes(q.id)
-  );
-
-  // Soal yang belum dipilih (untuk ditampilkan di modal)
-  const availableQuestions = filteredBankQuestions.filter(
-    (q) => !selectedQuestions.includes(q.id)
-  );
-
-  // Stats
-  const stats = useMemo(() => {
-    const values = Object.values(attendanceData);
-    return {
-      hadir: values.filter((v) => v === "hadir").length,
-      tidakHadir: values.filter((v) => v === "tidak_hadir").length,
-      izin: values.filter((v) => v === "izin").length,
-      sakit: values.filter((v) => v === "sakit").length,
-      total: students.length,
-      filled: values.length,
-    };
-  }, [attendanceData, students.length]);
-
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("id-ID", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
-  };
-
-  useEffect(() => {
-    if (!classId) return;
-
-    const fetchClassDetail = async () => {
-      try {
-        const token = localStorage.getItem("access_token");
-
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/classes/${classId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (!res.ok) throw new Error("Gagal fetch kelas");
-
-        const json = await res.json();
-        setClassInfo(json.data);
-      } catch (e) {
-        console.error("Gagal fetch detail kelas", e);
-        setClassInfo(null);
-      } finally {
-        setLoadingClass(false);
-      }
-    };
-
-    fetchClassDetail();
-  }, [classId]);
 
   if (loadingClass) {
     return (
@@ -989,7 +960,6 @@ export default function KelasGuruDetailPage() {
             <p className="text-xs text-white/80">{classInfo.school_place}</p>
           </div>
         </div>
-
         <div className="bg-white/20 rounded-lg p-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -1011,7 +981,6 @@ export default function KelasGuruDetailPage() {
           </div>
         </div>
       </div>
-
       {/* Tab Navigation */}
       <div className="flex border-b border-slate-200 overflow-x-auto">
         {[
@@ -1035,7 +1004,6 @@ export default function KelasGuruDetailPage() {
           </button>
         ))}
       </div>
-
       {/* Content */}
       <div className="p-4">
         {/* Siswa Tab */}
@@ -1053,8 +1021,6 @@ export default function KelasGuruDetailPage() {
                 Tambah Siswa
               </button>
             </div>
-
-            {/* Combined students list */}
             {loadingStudents ? (
               <p className="text-sm text-slate-400">Memuat siswa...</p>
             ) : students.length === 0 ? (
@@ -1082,7 +1048,6 @@ export default function KelasGuruDetailPage() {
                       </p>
                     </div>
                   </div>
-
                   <button
                     onClick={() => removeStudentFromClass(student.id)}
                     className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
@@ -1094,10 +1059,9 @@ export default function KelasGuruDetailPage() {
             )}
           </div>
         )}
-
         {/* Presensi Tab */}
         {activeTab === "presensi" && (
-          <>
+          <div className="space-y-4">
             <div className="mb-4">
               <button
                 onClick={() => setShowDatePicker(!showDatePicker)}
@@ -1119,7 +1083,6 @@ export default function KelasGuruDetailPage() {
                   )}
                 />
               </button>
-
               {showDatePicker && (
                 <div className="mt-2 p-2 bg-white border border-slate-200 rounded-lg shadow-lg">
                   <input
@@ -1131,7 +1094,6 @@ export default function KelasGuruDetailPage() {
                 </div>
               )}
             </div>
-
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="font-medium text-slate-700">Daftar Siswa</h3>
@@ -1139,8 +1101,6 @@ export default function KelasGuruDetailPage() {
                   {stats.filled}/{stats.total} terisi
                 </span>
               </div>
-
-              {/* Scrollable student list */}
               <div className="max-h-[400px] overflow-y-auto space-y-3 p-3 bg-slate-50 border border-slate-200 rounded-xl">
                 {students.map((student, index) => (
                   <div
@@ -1163,7 +1123,6 @@ export default function KelasGuruDetailPage() {
                         </p>
                       </div>
                     </div>
-
                     <div className="grid grid-cols-4 gap-2">
                       {STATUS_OPTIONS.map((option) => (
                         <button
@@ -1202,7 +1161,6 @@ export default function KelasGuruDetailPage() {
                 ))}
               </div>
             </div>
-
             {/* Rekap Kehadiran */}
             <div className="mt-6 bg-slate-50 rounded-xl p-4 border border-slate-200">
               <h4 className="font-medium text-slate-700 mb-3">
@@ -1238,9 +1196,8 @@ export default function KelasGuruDetailPage() {
                 {stats.filled} dari {stats.total} siswa tercatat
               </p>
             </div>
-          </>
+          </div>
         )}
-
         {/* Materi Tab */}
         {activeTab === "materi" && (
           <div className="space-y-4">
@@ -1254,7 +1211,6 @@ export default function KelasGuruDetailPage() {
                 Tambah
               </button>
             </div>
-
             {materials.length === 0 ? (
               <div className="text-center py-8 text-slate-500 text-sm">
                 Belum ada materi. Klik tombol Tambah untuk menambahkan materi
@@ -1312,11 +1268,7 @@ export default function KelasGuruDetailPage() {
                           <PencilIcon className="size-5" />
                         </button>
                         <button
-                          onClick={() => {
-                            if (confirm("Hapus materi ini?")) {
-                              handleDeleteMaterial(material.id);
-                            }
-                          }}
+                          onClick={() => handleDeleteMaterial(material.id)}
                           className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition"
                         >
                           <TrashIcon className="size-5" />
@@ -1329,7 +1281,6 @@ export default function KelasGuruDetailPage() {
             )}
           </div>
         )}
-
         {/* Latihan Tab */}
         {activeTab === "latihan" && (
           <div className="space-y-4">
@@ -1361,8 +1312,18 @@ export default function KelasGuruDetailPage() {
                   onClick={() => setShowRepostExerciseModal(true)}
                   className="flex items-center gap-1 px-3 py-1.5 bg-purple-600 text-white text-xs font-medium rounded-lg hover:bg-purple-700 transition"
                 >
-                  <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  <svg
+                    className="size-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
                   </svg>
                   Repost
                 </button>
@@ -1375,8 +1336,9 @@ export default function KelasGuruDetailPage() {
                 </button>
               </div>
             </div>
-
-            {exercises.length === 0 ? (
+            {loadingExercises ? (
+              <p className="text-sm text-slate-400">Memuat latihan...</p>
+            ) : exercises.length === 0 ? (
               <div className="text-center py-8 text-slate-500 text-sm">
                 Belum ada latihan soal. Klik tombol Tambah untuk menambahkan
                 latihan baru.
@@ -1452,7 +1414,6 @@ export default function KelasGuruDetailPage() {
             )}
           </div>
         )}
-
         {/* Diskusi Tab */}
         {activeTab === "diskusi" && (
           <div className="space-y-4">
@@ -1468,23 +1429,18 @@ export default function KelasGuruDetailPage() {
                 Baru
               </button>
             </div>
-
-            {/* Discussions List */}
             <div className="space-y-4">
               {discussionsLoading && (
                 <p className="text-sm text-slate-400">Memuat diskusi...</p>
               )}
-
               {!discussionsLoading && discussions.length === 0 && (
                 <p className="text-sm text-slate-400">Belum ada diskusi</p>
               )}
-
               {discussions.map((discussion) => (
                 <div
                   key={discussion.id}
                   className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden"
                 >
-                  {/* Discussion Header */}
                   <div className="p-4 pb-3">
                     <div className="flex items-center gap-3">
                       <InitialsAvatar
@@ -1493,11 +1449,25 @@ export default function KelasGuruDetailPage() {
                         bgColor="teal"
                       />
                       <div className="flex-1">
-                        <p className="font-semibold text-slate-700 text-sm">
-                          {discussion.user.name}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-slate-700 text-sm">
+                            {discussion.user.name}
+                          </p>
+                          <span
+                            className={clsx(
+                              "px-2 py-0.5 rounded-full text-xs font-medium",
+                              discussion.user.role_id === 2 // Asumsi role_id 2 untuk guru; sesuaikan dengan data backend Anda
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-green-100 text-green-700"
+                            )}
+                          >
+                            {discussion.user.role_id === 2 ? "Guru" : "Siswa"}
+                          </span>
+                        </div>
                         <p className="text-xs text-slate-400">
-                          {new Date(discussion.created_at).toLocaleString("id-ID")}
+                          {new Date(discussion.created_at).toLocaleString(
+                            "id-ID"
+                          )}
                         </p>
                       </div>
                     </div>
@@ -1505,20 +1475,18 @@ export default function KelasGuruDetailPage() {
                       {discussion.content}
                     </p>
                   </div>
-
-                  {/* Media Image */}
                   {discussion.image_url && (
                     <div className="w-full">
                       <img
                         src={discussion.image_url}
                         alt="Diskusi"
                         className="w-full max-h-64 object-cover cursor-pointer"
-                        onClick={() => window.open(discussion.image_url, "_blank")}
+                        onClick={() =>
+                          window.open(discussion.image_url, "_blank")
+                        }
                       />
                     </div>
                   )}
-
-                  {/* Media Video */}
                   {normalizeYoutubeEmbed(discussion.youtube_url) && (
                     <div className="relative w-full pt-[56.25%] bg-black">
                       <iframe
@@ -1529,8 +1497,6 @@ export default function KelasGuruDetailPage() {
                       />
                     </div>
                   )}
-
-                  {/* Footer */}
                   <div className="px-4 py-3 bg-white border-t border-slate-100">
                     <button
                       onClick={() => toggleReplies(discussion.id)}
@@ -1544,11 +1510,8 @@ export default function KelasGuruDetailPage() {
                         : "Tulis balasan"}
                     </button>
                   </div>
-
-                  {/* Collapsible Replies Section */}
                   {expandedReplies[discussion.id] && (
                     <div className="bg-slate-50 border-t border-slate-100 px-4 py-3 space-y-3">
-                      {/* List Balasan */}
                       {discussion.replies?.length > 0 ? (
                         discussion.replies.map((reply: any) => (
                           <div key={reply.id} className="flex gap-3">
@@ -1558,9 +1521,21 @@ export default function KelasGuruDetailPage() {
                               bgColor="slate"
                             />
                             <div>
-                              <p className="text-xs font-medium text-slate-700">
-                                {reply.user.name}
-                              </p>
+                              <div className="flex items-center gap-2">
+                                <p className="text-xs font-medium text-slate-700">
+                                  {reply.user.name}
+                                </p>
+                                <span
+                                  className={clsx(
+                                    "px-2 py-0.5 rounded-full text-[10px] font-medium",
+                                    reply.user.role_id === 2
+                                      ? "bg-blue-100 text-blue-700"
+                                      : "bg-green-100 text-green-700"
+                                  )}
+                                >
+                                  {reply.user.role_id === 2 ? "Guru" : "Siswa"}
+                                </span>
+                              </div>
                               <p className="text-xs text-slate-600">
                                 {reply.content}
                               </p>
@@ -1568,10 +1543,10 @@ export default function KelasGuruDetailPage() {
                           </div>
                         ))
                       ) : (
-                        <p className="text-xs text-slate-400">Belum ada balasan</p>
+                        <p className="text-xs text-slate-400">
+                          Belum ada balasan
+                        </p>
                       )}
-
-                      {/* Reply Input */}
                       <div className="flex gap-2 pt-2">
                         <input
                           type="text"
@@ -1601,7 +1576,6 @@ export default function KelasGuruDetailPage() {
           </div>
         )}
       </div>
-
       {/* Save Button - Presensi Tab */}
       {activeTab === "presensi" && (
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-slate-200 max-w-[480px] mx-auto">
@@ -1651,8 +1625,7 @@ export default function KelasGuruDetailPage() {
           </button>
         </div>
       )}
-
-      {/* Add Material Modal */}
+      {/* Modals */}
       {showAddMaterialModal && (
         <div className="fixed inset-0 z-[200] flex items-end justify-center">
           <div
@@ -1671,7 +1644,6 @@ export default function KelasGuruDetailPage() {
                 <XMarkIcon className="size-6 text-slate-500" />
               </button>
             </div>
-
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -1687,7 +1659,6 @@ export default function KelasGuruDetailPage() {
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
                   Deskripsi *
@@ -1705,7 +1676,6 @@ export default function KelasGuruDetailPage() {
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 resize-none"
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
                   Tipe Materi
@@ -1739,7 +1709,6 @@ export default function KelasGuruDetailPage() {
                   </button>
                 </div>
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
                   {newMaterial.type === "pdf"
@@ -1760,7 +1729,6 @@ export default function KelasGuruDetailPage() {
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
                   Durasi
@@ -1775,7 +1743,6 @@ export default function KelasGuruDetailPage() {
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
                 />
               </div>
-
               <button
                 onClick={handleAddMaterial}
                 disabled={!newMaterial.title || !newMaterial.description}
@@ -1787,8 +1754,6 @@ export default function KelasGuruDetailPage() {
           </div>
         </div>
       )}
-
-      {/* Add Exercise Modal */}
       {showAddExerciseModal && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center">
           <div
@@ -1807,9 +1772,7 @@ export default function KelasGuruDetailPage() {
                 <XMarkIcon className="size-6 text-slate-500" />
               </button>
             </div>
-
             <div className="space-y-4">
-              {/* Basic Info */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
                   Judul Latihan *
@@ -1824,7 +1787,6 @@ export default function KelasGuruDetailPage() {
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
                   Deskripsi *
@@ -1842,7 +1804,6 @@ export default function KelasGuruDetailPage() {
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 resize-none"
                 />
               </div>
-
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -1878,10 +1839,6 @@ export default function KelasGuruDetailPage() {
                   />
                 </div>
               </div>
-
-              {/* Questions Section - REMOVED */}
-              {/* Soal akan dikelola dari Bank Soal */}
-
               <button
                 onClick={handleAddExercise}
                 disabled={
@@ -1897,8 +1854,6 @@ export default function KelasGuruDetailPage() {
           </div>
         </div>
       )}
-
-      {/* Exercise Detail Modal */}
       {showExerciseDetailModal && selectedExercise && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center">
           <div
@@ -1910,7 +1865,6 @@ export default function KelasGuruDetailPage() {
             }}
           />
           <div className="relative w-full max-w-[480px] bg-white rounded-2xl max-h-[90vh] overflow-hidden flex flex-col mx-4">
-            {/* Modal Header */}
             <div className="bg-gradient-to-r from-teal-600 to-teal-500 text-white p-4 pt-6">
               <div className="flex items-center gap-3 mb-3">
                 <button
@@ -1932,8 +1886,6 @@ export default function KelasGuruDetailPage() {
                   </p>
                 </div>
               </div>
-
-              {/* Info Cards */}
               <div className="grid grid-cols-3 gap-2">
                 <div className="bg-white/20 rounded-lg p-2 text-center">
                   <p className="text-xs text-teal-100">Soal</p>
@@ -1955,8 +1907,6 @@ export default function KelasGuruDetailPage() {
                 </div>
               </div>
             </div>
-
-            {/* Add Question Button */}
             <div className="p-4 bg-white border-b border-slate-200">
               <button
                 onClick={() => setShowSelectQuestionModal(true)}
@@ -1966,13 +1916,10 @@ export default function KelasGuruDetailPage() {
                 Pilih Soal dari Bank Soal
               </button>
             </div>
-
-            {/* Selected Questions List */}
             <div className="flex-1 overflow-y-auto p-4">
               <h2 className="text-lg font-semibold text-slate-700 mb-3">
                 Daftar Soal ({selectedQuestions.length})
               </h2>
-
               {exerciseQuestions.length === 0 ? (
                 <div className="text-center py-12 bg-white rounded-xl border-2 border-dashed border-slate-200">
                   <ClipboardDocumentListIcon className="size-12 text-slate-300 mx-auto mb-3" />
@@ -2010,11 +1957,9 @@ export default function KelasGuruDetailPage() {
                           <TrashIcon className="size-4" />
                         </button>
                       </div>
-
                       <p className="text-slate-800 font-medium mb-3">
                         {question.question}
                       </p>
-
                       <div className="space-y-2">
                         {question.options.map((option, optIndex) => (
                           <div
@@ -2056,8 +2001,6 @@ export default function KelasGuruDetailPage() {
                 </div>
               )}
             </div>
-
-            {/* Footer */}
             <div className="p-4 border-t border-slate-200 bg-white">
               <button
                 onClick={handleSaveExerciseQuestions}
@@ -2069,12 +2012,9 @@ export default function KelasGuruDetailPage() {
           </div>
         </div>
       )}
-
-      {/* Select Questions Modal */}
       {showSelectQuestionModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[400] p-4">
           <div className="relative w-full max-w-[480px] bg-white rounded-2xl max-h-[90vh] overflow-hidden flex flex-col">
-            {/* Modal Header */}
             <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-white sticky top-0 z-10">
               <div>
                 <h3 className="text-lg font-semibold text-slate-700">
@@ -2094,8 +2034,6 @@ export default function KelasGuruDetailPage() {
                 <XMarkIcon className="size-6 text-slate-500" />
               </button>
             </div>
-
-            {/* Search */}
             <div className="p-4 border-b border-slate-200 bg-slate-50">
               <input
                 type="text"
@@ -2105,10 +2043,10 @@ export default function KelasGuruDetailPage() {
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
               />
             </div>
-
-            {/* Questions List */}
             <div className="flex-1 overflow-y-auto p-4">
-              {availableQuestions.length === 0 ? (
+              {loadingBankQuestions ? (
+                <p className="text-sm text-slate-400">Memuat soal...</p>
+              ) : availableQuestions.length === 0 ? (
                 <div className="text-center py-8">
                   <p className="text-slate-500">
                     {searchQuery
@@ -2146,8 +2084,6 @@ export default function KelasGuruDetailPage() {
                 </div>
               )}
             </div>
-
-            {/* Modal Footer */}
             <div className="p-4 border-t border-slate-200 bg-white">
               <button
                 onClick={() => {
@@ -2162,8 +2098,6 @@ export default function KelasGuruDetailPage() {
           </div>
         </div>
       )}
-
-      {/* Add Student Modal */}
       {showAddStudentModal && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center">
           <div
@@ -2190,9 +2124,7 @@ export default function KelasGuruDetailPage() {
                 <XMarkIcon className="size-6 text-slate-500" />
               </button>
             </div>
-
             <div className="space-y-4">
-              {/* Search Input */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   Cari Siswa
@@ -2214,8 +2146,6 @@ export default function KelasGuruDetailPage() {
                   </p>
                 )}
               </div>
-
-              {/* Search Results */}
               {studentSearchResults.length > 0 ? (
                 <div className="space-y-2">
                   <p className="text-xs text-slate-500">
@@ -2256,15 +2186,14 @@ export default function KelasGuruDetailPage() {
               ) : studentSearch.length >= 2 ? (
                 <div className="text-center py-6 bg-slate-50 rounded-lg">
                   <p className="text-sm text-slate-500">
-                    Tidak ada siswa dengan nama tersebut di {classInfo?.school_place}
+                    Tidak ada siswa dengan nama tersebut di{" "}
+                    {classInfo?.school_place}
                   </p>
                   <p className="text-xs text-slate-400 mt-1">
                     Pastikan siswa sudah mendaftar dan memilih sekolah yang sama
                   </p>
                 </div>
               ) : null}
-
-              {/* Info */}
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
                 <p className="text-xs text-blue-700">
                   <strong>Tips:</strong> Cari berdasarkan nama lengkap atau NISN
@@ -2275,45 +2204,66 @@ export default function KelasGuruDetailPage() {
           </div>
         </div>
       )}
-
-      {/* Edit Material Modal */}
       {showEditMaterialModal && editingMaterial && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setShowEditMaterialModal(false)} />
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setShowEditMaterialModal(false)}
+          />
           <div className="relative w-full max-w-[480px] bg-white rounded-2xl p-4 pb-6 max-h-[80vh] overflow-auto mx-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-slate-700">Edit Materi</h3>
-              <button onClick={() => setShowEditMaterialModal(false)} className="p-1 hover:bg-slate-100 rounded-full">
+              <h3 className="text-lg font-semibold text-slate-700">
+                Edit Materi
+              </h3>
+              <button
+                onClick={() => setShowEditMaterialModal(false)}
+                className="p-1 hover:bg-slate-100 rounded-full"
+              >
                 <XMarkIcon className="size-6 text-slate-500" />
               </button>
             </div>
-            
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Judul Materi *</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Judul Materi *
+                </label>
                 <input
                   type="text"
                   value={editMaterialData.title}
-                  onChange={(e) => setEditMaterialData({ ...editMaterialData, title: e.target.value })}
+                  onChange={(e) =>
+                    setEditMaterialData({
+                      ...editMaterialData,
+                      title: e.target.value,
+                    })
+                  }
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
                 />
               </div>
-              
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Deskripsi *</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Deskripsi *
+                </label>
                 <textarea
                   value={editMaterialData.description}
-                  onChange={(e) => setEditMaterialData({ ...editMaterialData, description: e.target.value })}
+                  onChange={(e) =>
+                    setEditMaterialData({
+                      ...editMaterialData,
+                      description: e.target.value,
+                    })
+                  }
                   rows={3}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 resize-none"
                 />
               </div>
-              
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Tipe Materi</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Tipe Materi
+                </label>
                 <div className="flex gap-3">
                   <button
-                    onClick={() => setEditMaterialData({ ...editMaterialData, type: "pdf" })}
+                    onClick={() =>
+                      setEditMaterialData({ ...editMaterialData, type: "pdf" })
+                    }
                     className={clsx(
                       "flex-1 py-2 rounded-lg border-2 text-sm font-medium transition",
                       editMaterialData.type === "pdf"
@@ -2324,7 +2274,12 @@ export default function KelasGuruDetailPage() {
                     PDF
                   </button>
                   <button
-                    onClick={() => setEditMaterialData({ ...editMaterialData, type: "video" })}
+                    onClick={() =>
+                      setEditMaterialData({
+                        ...editMaterialData,
+                        type: "video",
+                      })
+                    }
                     className={clsx(
                       "flex-1 py-2 rounded-lg border-2 text-sm font-medium transition",
                       editMaterialData.type === "video"
@@ -2336,18 +2291,23 @@ export default function KelasGuruDetailPage() {
                   </button>
                 </div>
               </div>
-              
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Durasi</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Durasi
+                </label>
                 <input
                   type="text"
                   value={editMaterialData.duration}
-                  onChange={(e) => setEditMaterialData({ ...editMaterialData, duration: e.target.value })}
+                  onChange={(e) =>
+                    setEditMaterialData({
+                      ...editMaterialData,
+                      duration: e.target.value,
+                    })
+                  }
                   placeholder="Contoh: 30 menit"
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
                 />
               </div>
-              
               <div className="flex gap-2 pt-2">
                 <button
                   onClick={() => setShowEditMaterialModal(false)}
@@ -2357,7 +2317,9 @@ export default function KelasGuruDetailPage() {
                 </button>
                 <button
                   onClick={handleSaveEditMaterial}
-                  disabled={!editMaterialData.title || !editMaterialData.description}
+                  disabled={
+                    !editMaterialData.title || !editMaterialData.description
+                  }
                   className="flex-1 py-3 bg-teal-600 text-white font-semibold rounded-xl hover:bg-teal-700 transition disabled:opacity-50"
                 >
                   Simpan
@@ -2367,61 +2329,91 @@ export default function KelasGuruDetailPage() {
           </div>
         </div>
       )}
-
-      {/* Edit Exercise Modal */}
       {showEditExerciseModal && editingExercise && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setShowEditExerciseModal(false)} />
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setShowEditExerciseModal(false)}
+          />
           <div className="relative w-full max-w-[480px] bg-white rounded-2xl p-4 pb-6 max-h-[80vh] overflow-auto mx-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-slate-700">Edit Latihan</h3>
-              <button onClick={() => setShowEditExerciseModal(false)} className="p-1 hover:bg-slate-100 rounded-full">
+              <h3 className="text-lg font-semibold text-slate-700">
+                Edit Latihan
+              </h3>
+              <button
+                onClick={() => setShowEditExerciseModal(false)}
+                className="p-1 hover:bg-slate-100 rounded-full"
+              >
                 <XMarkIcon className="size-6 text-slate-500" />
               </button>
             </div>
-            
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Judul Latihan *</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Judul Latihan *
+                </label>
                 <input
                   type="text"
                   value={editExerciseData.title}
-                  onChange={(e) => setEditExerciseData({ ...editExerciseData, title: e.target.value })}
+                  onChange={(e) =>
+                    setEditExerciseData({
+                      ...editExerciseData,
+                      title: e.target.value,
+                    })
+                  }
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
                 />
               </div>
-              
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Deskripsi *</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Deskripsi *
+                </label>
                 <textarea
                   value={editExerciseData.description}
-                  onChange={(e) => setEditExerciseData({ ...editExerciseData, description: e.target.value })}
+                  onChange={(e) =>
+                    setEditExerciseData({
+                      ...editExerciseData,
+                      description: e.target.value,
+                    })
+                  }
                   rows={3}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 resize-none"
                 />
               </div>
-              
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Durasi (menit)</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Durasi (menit)
+                  </label>
                   <input
                     type="number"
                     value={editExerciseData.duration}
-                    onChange={(e) => setEditExerciseData({ ...editExerciseData, duration: parseInt(e.target.value) || 10 })}
+                    onChange={(e) =>
+                      setEditExerciseData({
+                        ...editExerciseData,
+                        duration: parseInt(e.target.value) || 10,
+                      })
+                    }
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Deadline</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Deadline
+                  </label>
                   <input
                     type="date"
                     value={editExerciseData.deadline}
-                    onChange={(e) => setEditExerciseData({ ...editExerciseData, deadline: e.target.value })}
+                    onChange={(e) =>
+                      setEditExerciseData({
+                        ...editExerciseData,
+                        deadline: e.target.value,
+                      })
+                    }
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
                   />
                 </div>
               </div>
-              
               <div className="flex gap-2 pt-2">
                 <button
                   onClick={() => setShowEditExerciseModal(false)}
@@ -2431,7 +2423,9 @@ export default function KelasGuruDetailPage() {
                 </button>
                 <button
                   onClick={handleSaveEditExercise}
-                  disabled={!editExerciseData.title || !editExerciseData.description}
+                  disabled={
+                    !editExerciseData.title || !editExerciseData.description
+                  }
                   className="flex-1 py-3 bg-teal-600 text-white font-semibold rounded-xl hover:bg-teal-700 transition disabled:opacity-50"
                 >
                   Simpan
@@ -2441,25 +2435,32 @@ export default function KelasGuruDetailPage() {
           </div>
         </div>
       )}
-
-      {/* Repost Exercise Modal */}
       {showRepostExerciseModal && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setShowRepostExerciseModal(false)} />
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setShowRepostExerciseModal(false)}
+          />
           <div className="relative w-full max-w-[480px] bg-white rounded-2xl p-4 pb-6 max-h-[85vh] overflow-auto mx-4">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-lg font-semibold text-slate-700">Repost Latihan</h3>
-                <p className="text-xs text-slate-500 mt-0.5">Pilih latihan dari guru lain untuk direpost ke kelas Anda</p>
+                <h3 className="text-lg font-semibold text-slate-700">
+                  Repost Latihan
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Pilih latihan dari guru lain untuk direpost ke kelas Anda
+                </p>
               </div>
-              <button onClick={() => setShowRepostExerciseModal(false)} className="p-1 hover:bg-slate-100 rounded-full">
+              <button
+                onClick={() => setShowRepostExerciseModal(false)}
+                className="p-1 hover:bg-slate-100 rounded-full"
+              >
                 <XMarkIcon className="size-6 text-slate-500" />
               </button>
             </div>
-            
             <div className="space-y-3">
               {PUBLIC_EXERCISES.map((exercise) => (
-                <div 
+                <div
                   key={exercise.id}
                   className="border border-slate-200 rounded-xl p-4 hover:border-purple-300 hover:bg-purple-50/30 transition"
                 >
@@ -2468,20 +2469,34 @@ export default function KelasGuruDetailPage() {
                       <ClipboardDocumentListIcon className="size-5 text-purple-600" />
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-semibold text-slate-700 text-sm">{exercise.title}</h4>
-                      <p className="text-xs text-slate-500 mt-0.5">{exercise.description}</p>
+                      <h4 className="font-semibold text-slate-700 text-sm">
+                        {exercise.title}
+                      </h4>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        {exercise.description}
+                      </p>
                       <div className="flex items-center gap-2 mt-2">
-                        <span className="text-[10px] text-slate-400">{exercise.totalQuestions} soal</span>
+                        <span className="text-[10px] text-slate-400">
+                          {exercise.totalQuestions} soal
+                        </span>
                         <span className="text-slate-300">•</span>
-                        <span className="text-[10px] text-slate-400">{exercise.duration} menit</span>
+                        <span className="text-[10px] text-slate-400">
+                          {exercise.duration} menit
+                        </span>
                       </div>
                       <div className="flex items-center gap-1 mt-2">
                         <div className="w-5 h-5 bg-slate-200 rounded-full flex items-center justify-center">
-                          <span className="text-[8px] font-bold text-slate-600">{exercise.authorName.charAt(0)}</span>
+                          <span className="text-[8px] font-bold text-slate-600">
+                            {exercise.authorName.charAt(0)}
+                          </span>
                         </div>
                         <div>
-                          <p className="text-[10px] font-medium text-slate-600">{exercise.authorName}</p>
-                          <p className="text-[9px] text-slate-400">{exercise.authorSchool}</p>
+                          <p className="text-[10px] font-medium text-slate-600">
+                            {exercise.authorName}
+                          </p>
+                          <p className="text-[9px] text-slate-400">
+                            {exercise.authorSchool}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -2495,7 +2510,6 @@ export default function KelasGuruDetailPage() {
                 </div>
               ))}
             </div>
-            
             {PUBLIC_EXERCISES.length === 0 && (
               <div className="text-center py-8 text-slate-500 text-sm">
                 Tidak ada latihan publik yang tersedia untuk direpost.
@@ -2504,8 +2518,6 @@ export default function KelasGuruDetailPage() {
           </div>
         </div>
       )}
-
-      {/* Add Discussion Modal */}
       {showAddDiscussionModal && (
         <div className="fixed inset-0 z-[200] flex items-end justify-center">
           <div
@@ -2524,7 +2536,6 @@ export default function KelasGuruDetailPage() {
                 <XMarkIcon className="w-6 h-6 text-slate-500" />
               </button>
             </div>
-
             <textarea
               value={newDiscussion}
               onChange={(e) => setNewDiscussion(e.target.value)}
@@ -2533,7 +2544,6 @@ export default function KelasGuruDetailPage() {
               rows={4}
               autoFocus
             />
-
             {(selectedImages.length > 0 || videoUrl) && (
               <div className="mt-3 space-y-2">
                 {selectedImages.length > 0 && (
@@ -2577,7 +2587,6 @@ export default function KelasGuruDetailPage() {
                 )}
               </div>
             )}
-
             <div className="flex items-center gap-2 mt-3">
               <label className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-medium rounded-lg cursor-pointer transition">
                 <PhotoIcon className="w-5 h-5" />
@@ -2593,17 +2602,7 @@ export default function KelasGuruDetailPage() {
               <button
                 onClick={() => {
                   const url = prompt("Masukkan URL video YouTube:");
-                  if (url) {
-                    let embedUrl = url;
-                    if (url.includes("youtube.com/watch")) {
-                      const videoId = url.split("v=")[1]?.split("&")[0];
-                      embedUrl = `https://www.youtube.com/embed/${videoId}`;
-                    } else if (url.includes("youtu.be/")) {
-                      const videoId = url.split("youtu.be/")[1]?.split("?")[0];
-                      embedUrl = `https://www.youtube.com/embed/${videoId}`;
-                    }
-                    setVideoUrl(embedUrl);
-                  }
+                  if (url) setVideoUrl(url);
                 }}
                 className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-medium rounded-lg transition"
               >

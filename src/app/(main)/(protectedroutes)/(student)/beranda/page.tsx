@@ -124,12 +124,9 @@ export default function StudentHomePage() {
               className="rounded-full border-2 border-teal-200 flex-shrink-0 hover:border-teal-400 transition"
             >
               <img
-                src={
-                  (auth?.avatar && getImage(auth.avatar)) ||
-                  "https://avatar.iran.liara.run/public"
-                }
+                src={getImage(auth?.avatar)}
                 className="object-cover rounded-full size-10"
-                alt=""
+                alt="Avatar"
               />
             </Link>
           </div>
