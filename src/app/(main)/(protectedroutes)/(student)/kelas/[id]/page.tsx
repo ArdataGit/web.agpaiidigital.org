@@ -6,7 +6,6 @@ import {
   BookOpenIcon,
   ClipboardDocumentListIcon,
   ChatBubbleBottomCenterTextIcon,
-  UserCircleIcon,
   ChevronLeftIcon,
   ChatBubbleLeftIcon,
   PhotoIcon,
@@ -21,16 +20,17 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   ExclamationTriangleIcon,
+  PencilIcon,
+  TrashIcon,
+  EllipsisVerticalIcon,
 } from "@heroicons/react/24/outline";
 import { CheckCircleIcon as CheckCircleSolidIcon } from "@heroicons/react/24/solid";
 import clsx from "clsx";
 import {
-  MOCK_MATERIALS,
-  MOCK_EXERCISES,
-  MOCK_DISCUSSIONS,
   getClassById,
   Material,
   Exercise,
+  Discussion,
   getAttendanceDates,
   getAttendanceByClassAndDate,
   MOCK_STUDENTS_BY_CLASS,
@@ -77,7 +77,7 @@ const InitialsAvatar = ({
   );
 };
 
-type TabType = "materi" | "latihan" | "diskusi" | "kehadiran" | "profile";
+type TabType = "materi" | "latihan" | "diskusi" | "kehadiran";
 
 export default function KelasDetailPage() {
   const normalizeYoutubeEmbed = (url?: string) => {
@@ -165,6 +165,7 @@ export default function KelasDetailPage() {
   const [materials, setMaterials] = useState<any[]>([]);
   const [materialsLoading, setMaterialsLoading] = useState(false);
 
+
   const [attendanceSummary, setAttendanceSummary] = useState<any>(null);
   const [attendanceRecords, setAttendanceRecords] = useState<any[]>([]);
   const [attendanceLoading, setAttendanceLoading] = useState(false);
@@ -175,12 +176,47 @@ export default function KelasDetailPage() {
   const [posting, setPosting] = useState(false);
 
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  
+  // Edit/Delete modal states
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingDiscussion, setEditingDiscussion] = useState<Discussion | null>(null);
+  const [editContent, setEditContent] = useState("");
+  const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
 
   const toggleReplies = (discussionId: number) => {
     setExpandedReplies((prev) => ({
       ...prev,
       [discussionId]: !prev[discussionId],
     }));
+  };
+  
+  // Edit/Delete handlers for discussions
+  const handleEditDiscussion = (discussion: Discussion) => {
+    setEditingDiscussion(discussion);
+    setEditContent(discussion.content);
+    setShowEditModal(true);
+    setActiveMenuId(null);
+  };
+  
+  const handleSaveEdit = () => {
+    if (!editingDiscussion || !editContent.trim()) return;
+    setDiscussions(prev => prev.map(d => 
+      d.id === editingDiscussion.id ? { ...d, content: editContent } : d
+    ));
+    setShowEditModal(false);
+    setEditingDiscussion(null);
+    setEditContent("");
+  };
+  
+  const handleDeleteDiscussion = (discussionId: number) => {
+    if (confirm("Hapus diskusi ini?")) {
+      setDiscussions(prev => prev.filter(d => d.id !== discussionId));
+    }
+    setActiveMenuId(null);
+  };
+  
+  const toggleMenu = (discussionId: number) => {
+    setActiveMenuId(activeMenuId === discussionId ? null : discussionId);
   };
 
   useEffect(() => {
@@ -236,11 +272,6 @@ export default function KelasDetailPage() {
       id: "kehadiran",
       label: "Hadir",
       icon: <CalendarDaysIcon className="size-5" />,
-    },
-    {
-      id: "profile",
-      label: "Profile",
-      icon: <UserCircleIcon className="size-5" />,
     },
   ];
 
@@ -701,19 +732,13 @@ export default function KelasDetailPage() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <Link href="/kelas" className="p-1">
-              <ChevronLeftIcon className="size-6" />
+              <ChevronLeftIcon className="size-6 text-white" />
             </Link>
             <div>
               <h1 className="text-lg font-semibold">{classInfo.name}</h1>
               <p className="text-xs text-white/80">{classInfo.school_place}</p>
             </div>
           </div>
-          <button
-            onClick={() => setActiveTab("profile")}
-            className="p-2 hover:bg-white/20 rounded-full transition"
-          >
-            <UserCircleIcon className="size-7" />
-          </button>
         </div>
         <div className="bg-white/20 rounded-lg p-3">
           <p className="text-sm">
@@ -892,7 +917,7 @@ export default function KelasDetailPage() {
               </button>
             </div>
 
-            {/* Discussions List */}
+            {/* Discussions List - using local state */}
             <div className="space-y-4">
               {discussionsLoading && (
                 <p className="text-sm text-slate-400">Memuat diskusi...</p>
@@ -907,7 +932,7 @@ export default function KelasDetailPage() {
                   key={discussion.id}
                   className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden"
                 >
-                  {/* Discussion Header */}
+                  {/* Discussion Header with Menu */}
                   <div className="p-4 pb-3">
                     <div className="flex items-center gap-3">
                       <InitialsAvatar
@@ -1163,86 +1188,6 @@ export default function KelasDetailPage() {
             </div>
           </div>
         )}
-
-        {/* Profile Tab */}
-        {activeTab === "profile" && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-slate-700 mb-4">
-              Profil Siswa
-            </h2>
-
-            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm text-center">
-              <img
-                src={
-                  (auth?.avatar && getImage(auth.avatar)) ||
-                  "https://avatar.iran.liara.run/public"
-                }
-                alt={auth?.name}
-                className="size-24 rounded-full mx-auto border-4 border-teal-500"
-              />
-              <h3 className="text-xl font-semibold text-slate-700 mt-4">
-                {auth?.name || "Nama Siswa"}
-              </h3>
-              <p className="text-sm text-slate-500 mt-1">
-                {auth?.email || "email@siswa.com"}
-              </p>
-              <span className="inline-block mt-3 px-4 py-1 bg-teal-100 text-teal-700 text-sm font-medium rounded-full">
-                Siswa
-              </span>
-            </div>
-
-            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-              <h4 className="font-medium text-slate-700 mb-3">
-                Informasi Kelas
-              </h4>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Nama Kelas</span>
-                  <span className="text-slate-700 font-medium">
-                    {classInfo.name}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Guru Pengampu</span>
-                  <span className="text-slate-700 font-medium">
-                    {classInfo.teacher.name}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Sekolah</span>
-                  <span className="text-slate-700 font-medium">
-                    {classInfo.school_place}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-              <h4 className="font-medium text-slate-700 mb-3">Statistik</h4>
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <p className="text-2xl font-bold text-teal-600">
-                    {materials.length}
-                  </p>
-                  <p className="text-xs text-slate-500">Materi</p>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-orange-500">
-                    {MOCK_EXERCISES.filter((e) => e.isCompleted).length}/
-                    {MOCK_EXERCISES.length}
-                  </p>
-                  <p className="text-xs text-slate-500">Latihan</p>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-blue-500">
-                    {MOCK_DISCUSSIONS.length}
-                  </p>
-                  <p className="text-xs text-slate-500">Diskusi</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Bottom Navigation Bar */}
@@ -1330,7 +1275,7 @@ export default function KelasDetailPage() {
                   onClick={() => setSelectedMaterial(null)}
                   className="p-1.5 hover:bg-white/20 rounded-lg transition"
                 >
-                  <ChevronLeftIcon className="size-6" />
+                  <ChevronLeftIcon className="size-6 text-white" />
                 </button>
                 <div className="flex-1">
                   <h1 className="font-bold text-lg">
@@ -1380,8 +1325,8 @@ export default function KelasDetailPage() {
                     <p className="text-xs text-slate-400 mt-1">Dokumen PDF</p>
                     <button
                       onClick={() => {
-                        if (selectedMaterial.file_url) {
-                          window.open(selectedMaterial.file_url, "_blank");
+                        if (selectedMaterial.fileUrl) {
+                          window.open(selectedMaterial.fileUrl, "_blank");
                         }
                       }}
                       className="mt-4 px-6 py-2.5 bg-red-600 text-white text-sm font-medium rounded-xl hover:bg-red-700 transition shadow-lg shadow-red-600/20"
@@ -1468,7 +1413,7 @@ export default function KelasDetailPage() {
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-slate-500">Tanggal Dibuat</span>
                       <span className="text-slate-700 font-medium">
-                        {selectedMaterial.created_at}
+                        {selectedMaterial.createdAt}
                       </span>
                     </div>
                   </div>
@@ -1785,6 +1730,45 @@ export default function KelasDetailPage() {
                 className="px-5 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 transition disabled:opacity-50"
               >
                 {posting ? "Mengirim..." : "Kirim"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Discussion Modal */}
+      {showEditModal && editingDiscussion && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowEditModal(false)} />
+          <div className="relative w-full max-w-[440px] mx-4 bg-white rounded-2xl p-4 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-slate-700">Edit Diskusi</h3>
+              <button onClick={() => setShowEditModal(false)} className="p-1 hover:bg-slate-100 rounded-full">
+                <XMarkIcon className="size-6 text-slate-500" />
+              </button>
+            </div>
+            
+            <textarea
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              placeholder="Isi diskusi..."
+              rows={5}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 resize-none text-sm"
+            />
+            
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="flex-1 py-2 border border-slate-300 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-50 transition"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                disabled={!editContent.trim()}
+                className="flex-1 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 transition disabled:opacity-50"
+              >
+                Simpan
               </button>
             </div>
           </div>
