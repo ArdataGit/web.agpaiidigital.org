@@ -254,7 +254,11 @@ export default function ForumPage() {
             >
               <div className="flex gap-3">
                 <img
-                  src="https://avatar.iran.liara.run/public"
+                  src={
+                    post.user.avatar?.startsWith("http")
+                      ? post.user.avatar
+                      : `http://file.agpaiidigital.org/${post.user.avatar}`
+                  }
                   alt={post.user.name}
                   className="size-12 rounded-full flex-shrink-0"
                 />

@@ -96,8 +96,6 @@ export default function StudentHomePage() {
     }
   }, [authLoading, auth]);
 
-
-
   return (
     <div className="w-full max-w-[480px] mx-auto bg-white min-h-screen">
       {/* Header dengan Sapaan */}
@@ -247,17 +245,24 @@ export default function StudentHomePage() {
               <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition">
                 <div className="flex gap-3">
                   <img
-                    src="https://avatar.iran.liara.run/public"
+                    src={
+                      post.user.avatar?.startsWith("http")
+                        ? post.user.avatar
+                        : `http://file.agpaiidigital.org/${post.user.avatar}`
+                    }
                     alt={post.user.name}
                     className="size-10 rounded-full flex-shrink-0"
                   />
+
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-semibold text-slate-700 text-sm">
                         {post.user.name}
                       </span>
                       <span className="text-xs text-teal-600 bg-teal-50 px-2 py-0.5 rounded-full">
-                        {post.user.role_id === STUDENT_ROLE_ID ? "Siswa" : "Guru"}
+                        {post.user.role_id === STUDENT_ROLE_ID
+                          ? "Siswa"
+                          : "Guru"}
                       </span>
                     </div>
 

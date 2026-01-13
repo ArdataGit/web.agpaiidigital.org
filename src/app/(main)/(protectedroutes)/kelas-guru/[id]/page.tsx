@@ -2167,10 +2167,11 @@ export default function KelasGuruDetailPage() {
                             {student.name}
                           </p>
                           <p className="text-xs text-slate-400">
-                            NISN: {student.nisn ?? "-"}
+                            NISN: {student.profile?.nisn ?? "-"}
                           </p>
                           <p className="text-xs text-slate-400">
-                            {student.school || "Sekolah tidak diketahui"}
+                            {student.profile?.school_place ??
+                              "Sekolah tidak diketahui"}
                           </p>
                         </div>
                       </div>
