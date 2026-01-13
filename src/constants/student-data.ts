@@ -257,7 +257,10 @@ export const MOCK_EXERCISES: Exercise[] = [
 ];
 
 // Public exercises from other teachers that can be reposted
-export const PUBLIC_EXERCISES: (Exercise & { authorName: string; authorSchool: string })[] = [
+export const PUBLIC_EXERCISES: (Exercise & {
+  authorName: string;
+  authorSchool: string;
+})[] = [
   {
     id: 101,
     title: "Latihan Akhlak Terpuji",
@@ -270,11 +273,51 @@ export const PUBLIC_EXERCISES: (Exercise & { authorName: string; authorSchool: s
     authorName: "Ustadz Ahmad",
     authorSchool: "SMP Negeri 2 Surabaya",
     questions: [
-      { id: 1, question: "Apa yang dimaksud dengan akhlak mahmudah?", options: ["Akhlak tercela", "Akhlak terpuji", "Akhlak biasa", "Tidak ada"], correctAnswer: 1 },
-      { id: 2, question: "Contoh sifat jujur dalam kehidupan sehari-hari adalah?", options: ["Berbohong untuk kebaikan", "Berkata benar meski pahit", "Menyembunyikan kesalahan", "Berbohong agar tidak dihukum"], correctAnswer: 1 },
-      { id: 3, question: "Sabar termasuk akhlak...?", options: ["Tercela", "Terpuji", "Biasa", "Tidak baik"], correctAnswer: 1 },
-      { id: 4, question: "Lawan dari sifat sombong adalah?", options: ["Kikir", "Rendah hati", "Malas", "Bohong"], correctAnswer: 1 },
-      { id: 5, question: "Menjaga lisan artinya?", options: ["Tidak berbicara", "Berbicara yang baik", "Berbicara banyak", "Diam saja"], correctAnswer: 1 },
+      {
+        id: 1,
+        question: "Apa yang dimaksud dengan akhlak mahmudah?",
+        options: [
+          "Akhlak tercela",
+          "Akhlak terpuji",
+          "Akhlak biasa",
+          "Tidak ada",
+        ],
+        correctAnswer: 1,
+      },
+      {
+        id: 2,
+        question: "Contoh sifat jujur dalam kehidupan sehari-hari adalah?",
+        options: [
+          "Berbohong untuk kebaikan",
+          "Berkata benar meski pahit",
+          "Menyembunyikan kesalahan",
+          "Berbohong agar tidak dihukum",
+        ],
+        correctAnswer: 1,
+      },
+      {
+        id: 3,
+        question: "Sabar termasuk akhlak...?",
+        options: ["Tercela", "Terpuji", "Biasa", "Tidak baik"],
+        correctAnswer: 1,
+      },
+      {
+        id: 4,
+        question: "Lawan dari sifat sombong adalah?",
+        options: ["Kikir", "Rendah hati", "Malas", "Bohong"],
+        correctAnswer: 1,
+      },
+      {
+        id: 5,
+        question: "Menjaga lisan artinya?",
+        options: [
+          "Tidak berbicara",
+          "Berbicara yang baik",
+          "Berbicara banyak",
+          "Diam saja",
+        ],
+        correctAnswer: 1,
+      },
     ],
   },
   {
@@ -289,11 +332,46 @@ export const PUBLIC_EXERCISES: (Exercise & { authorName: string; authorSchool: s
     authorName: "Bu Fatimah",
     authorSchool: "SMP Islam Terpadu Jakarta",
     questions: [
-      { id: 1, question: "Berapa jumlah rakaat sholat Maghrib?", options: ["2", "3", "4", "5"], correctAnswer: 1 },
-      { id: 2, question: "Sholat apa yang dilakukan saat matahari terbenam?", options: ["Dzuhur", "Ashar", "Maghrib", "Isya"], correctAnswer: 2 },
-      { id: 3, question: "Apa yang dibaca saat ruku?", options: ["Allahu Akbar", "Subhana Rabbiyal Azhim", "Sami Allahu Liman Hamidah", "Rabbana Lakal Hamd"], correctAnswer: 1 },
-      { id: 4, question: "Gerakan setelah ruku adalah?", options: ["Sujud", "Iktidal", "Duduk", "Salam"], correctAnswer: 1 },
-      { id: 5, question: "Kapan waktu sholat Subuh berakhir?", options: ["Saat matahari terbit", "Saat dzuhur", "Saat sore", "Saat malam"], correctAnswer: 0 },
+      {
+        id: 1,
+        question: "Berapa jumlah rakaat sholat Maghrib?",
+        options: ["2", "3", "4", "5"],
+        correctAnswer: 1,
+      },
+      {
+        id: 2,
+        question: "Sholat apa yang dilakukan saat matahari terbenam?",
+        options: ["Dzuhur", "Ashar", "Maghrib", "Isya"],
+        correctAnswer: 2,
+      },
+      {
+        id: 3,
+        question: "Apa yang dibaca saat ruku?",
+        options: [
+          "Allahu Akbar",
+          "Subhana Rabbiyal Azhim",
+          "Sami Allahu Liman Hamidah",
+          "Rabbana Lakal Hamd",
+        ],
+        correctAnswer: 1,
+      },
+      {
+        id: 4,
+        question: "Gerakan setelah ruku adalah?",
+        options: ["Sujud", "Iktidal", "Duduk", "Salam"],
+        correctAnswer: 1,
+      },
+      {
+        id: 5,
+        question: "Kapan waktu sholat Subuh berakhir?",
+        options: [
+          "Saat matahari terbit",
+          "Saat dzuhur",
+          "Saat sore",
+          "Saat malam",
+        ],
+        correctAnswer: 0,
+      },
     ],
   },
   {
@@ -308,11 +386,51 @@ export const PUBLIC_EXERCISES: (Exercise & { authorName: string; authorSchool: s
     authorName: "Pak Hasan",
     authorSchool: "MTs Negeri 1 Bandung",
     questions: [
-      { id: 1, question: "Apa yang membatalkan puasa?", options: ["Tidur siang", "Makan dan minum sengaja", "Mandi", "Berjemur"], correctAnswer: 1 },
-      { id: 2, question: "Kapan waktu sahur berakhir?", options: ["Saat imsak", "Saat dzuhur", "Saat maghrib", "Saat isya"], correctAnswer: 0 },
-      { id: 3, question: "Hukum puasa Ramadhan adalah?", options: ["Sunnah", "Wajib", "Mubah", "Makruh"], correctAnswer: 1 },
-      { id: 4, question: "Apa yang dibaca saat berbuka?", options: ["Doa sebelum makan", "Doa berbuka puasa", "Doa setelah makan", "Istighfar"], correctAnswer: 1 },
-      { id: 5, question: "Lailatul Qadar terjadi pada?", options: ["Malam ganjil 10 terakhir Ramadhan", "Setiap malam", "Malam pertama", "Malam ke-15"], correctAnswer: 0 },
+      {
+        id: 1,
+        question: "Apa yang membatalkan puasa?",
+        options: [
+          "Tidur siang",
+          "Makan dan minum sengaja",
+          "Mandi",
+          "Berjemur",
+        ],
+        correctAnswer: 1,
+      },
+      {
+        id: 2,
+        question: "Kapan waktu sahur berakhir?",
+        options: ["Saat imsak", "Saat dzuhur", "Saat maghrib", "Saat isya"],
+        correctAnswer: 0,
+      },
+      {
+        id: 3,
+        question: "Hukum puasa Ramadhan adalah?",
+        options: ["Sunnah", "Wajib", "Mubah", "Makruh"],
+        correctAnswer: 1,
+      },
+      {
+        id: 4,
+        question: "Apa yang dibaca saat berbuka?",
+        options: [
+          "Doa sebelum makan",
+          "Doa berbuka puasa",
+          "Doa setelah makan",
+          "Istighfar",
+        ],
+        correctAnswer: 1,
+      },
+      {
+        id: 5,
+        question: "Lailatul Qadar terjadi pada?",
+        options: [
+          "Malam ganjil 10 terakhir Ramadhan",
+          "Setiap malam",
+          "Malam pertama",
+          "Malam ke-15",
+        ],
+        correctAnswer: 0,
+      },
     ],
   },
 ];
@@ -343,7 +461,8 @@ export const MOCK_DISCUSSIONS: Discussion[] = [
     id: 0,
     authorName: "Siswa", // This can be edited if logged in user's name is "Siswa"
     authorAvatar: null,
-    content: "Ini adalah contoh diskusi yang bisa saya edit. Saya ingin bertanya tentang materi rukun Islam, apakah ada yang bisa menjelaskan secara detail tentang syarat-syarat sholat?",
+    content:
+      "Ini adalah contoh diskusi yang bisa saya edit. Saya ingin bertanya tentang materi rukun Islam, apakah ada yang bisa menjelaskan secara detail tentang syarat-syarat sholat?",
     createdAt: "2026-01-09 08:00",
     repliesCount: 2,
     repliesData: [
@@ -351,7 +470,8 @@ export const MOCK_DISCUSSIONS: Discussion[] = [
         id: 1,
         authorName: "Ustadz Hasan",
         authorAvatar: null,
-        content: "Syarat sah sholat ada 5: suci dari hadats, suci badan/pakaian/tempat, menutup aurat, menghadap kiblat, dan masuk waktu sholat.",
+        content:
+          "Syarat sah sholat ada 5: suci dari hadats, suci badan/pakaian/tempat, menutup aurat, menghadap kiblat, dan masuk waktu sholat.",
         createdAt: "2026-01-09 08:30",
       },
       {
@@ -858,15 +978,15 @@ export type StudentProfile = {
   nisn: string;
   school_place: string;
 };
-export interface RegisteredStudent {
+type RegisteredStudent = {
   id: number;
   name: string;
-  email: string;
-  nisn: string;
-  school: string;
-  registeredAt: string;
-  profile: StudentProfile | null;
-}
+  email?: string;
+  profile: {
+    nisn: string | null;
+    school_place: string | null;
+  } | null;
+};
 
 // // Siswa yang sudah mendaftar tapi belum didaftarkan ke kelas oleh guru
 // export const MOCK_REGISTERED_STUDENTS: RegisteredStudent[] = [
