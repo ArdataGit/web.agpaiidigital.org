@@ -35,10 +35,11 @@ export default function EditStudentProfilePage() {
     if (auth) {
       setName(auth.name || "");
       setEmail(auth.email || "");
-      setPhone(auth.phone || auth.no_hp || "");
+
+      setPhone(auth.profile?.contact || "");
       setNisn(auth.nisn || auth.profile?.nisn || "");
       setSchoolPlace(auth.school_place || auth.profile?.school_place || "");
-      
+
       if (auth.avatar) {
         setAvatarPreview(getImage(auth.avatar));
       }
@@ -79,12 +80,12 @@ export default function EditStudentProfilePage() {
       const formData = new FormData();
       formData.append("name", name.trim());
       formData.append("email", email.trim());
-      formData.append("no_hp", phone.trim());
-      
+      formData.append("contact", phone.trim());
+
       if (nisn.trim()) {
         formData.append("nisn", nisn.trim());
       }
-      
+
       if (schoolPlace.trim()) {
         formData.append("school_place", schoolPlace.trim());
       }
@@ -93,7 +94,7 @@ export default function EditStudentProfilePage() {
         formData.append("avatar", avatarFile);
       }
 
-      const res = await API.post("/profile/update", formData, {
+      const res = await API.post("/profile/siswa", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -101,11 +102,11 @@ export default function EditStudentProfilePage() {
 
       if (res.status === 200) {
         toast.success("Profil berhasil diperbarui");
-        
+
         // Update auth context
         const meRes = await API.get("/me");
         queryClient.setQueryData(["auth"], meRes.data);
-        
+
         router.push("/profile-siswa");
       }
     } catch (error: any) {
@@ -193,7 +194,9 @@ export default function EditStudentProfilePage() {
           <input
             type="text"
             value={nisn}
-            onChange={(e) => setNisn(e.target.value.replace(/\D/g, "").slice(0, 10))}
+            onChange={(e) =>
+              setNisn(e.target.value.replace(/\D/g, "").slice(0, 10))
+            }
             placeholder="Nomor Induk Siswa Nasional"
             maxLength={10}
             className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-teal-500 transition"
