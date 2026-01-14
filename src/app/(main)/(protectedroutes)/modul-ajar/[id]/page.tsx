@@ -75,6 +75,40 @@ const DetailModulAjarPage: React.FC = () => {
     fetchMaterialData();
   }, [materialId, API_URL, user?.id]);
 
+  const handleRepost = async () => {
+    if (!user?.id) {
+      showToast("Silakan login terlebih dahulu", "error");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+
+      const response = await axios.post(
+        `${API_URL}/modules-learn/${materialId}/repost`,
+        { user_id: user.id },
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
+      );
+
+      const newModuleId = response.data?.data?.module_id;
+
+      showToast("Modul berhasil direpost ke koleksi Anda", "success");
+
+      if (newModuleId) {
+        setTimeout(() => {
+          router.push(`/modul-ajar/${newModuleId}`);
+        }, 800);
+      }
+    } catch (error: any) {
+      showToast(
+        error.response?.data?.message || "Gagal merepost modul",
+        "error"
+      );
+    }
+  };
+
   const handleLike = async () => {
     if (!user) {
       showToast("Silakan login terlebih dahulu", "error");
@@ -599,47 +633,7 @@ const DetailModulAjarPage: React.FC = () => {
           {/* Repost Button - only show for modules not owned by current user */}
           {user?.id && materialData?.user_id !== user.id && (
             <button
-              onClick={() => {
-                // Save to localStorage as reposted module with FULL data
-                const repostedModules = JSON.parse(localStorage.getItem("repostedModules") || "[]");
-                const alreadyReposted = repostedModules.some((m: any) => m.originalId === materialData.id);
-                
-                if (alreadyReposted) {
-                  showToast("Modul ini sudah ada di koleksi Anda", "error");
-                  return;
-                }
-                
-                // Store full module data so user can edit it as their own
-                const repostedModule = {
-                  id: Date.now(),
-                  originalId: materialData.id,
-                  // Basic info
-                  judul: materialData.judul || materialData.topic,
-                  deskripsi_singkat: materialData.deskripsi_singkat || materialData.description,
-                  tentang_modul: materialData.tentang_modul || "",
-                  tujuan_pembelajaran: materialData.tujuan_pembelajaran || materialData.tujuan || "",
-                  thumbnail: materialData.thumbnail,
-                  category: materialData.category || "Kegiatan Intrakurikuler",
-                  // Grade/Phase info
-                  jenjang: materialData.jenjang,
-                  fase: materialData.fase,
-                  // Content data for editing
-                  materi: materi || [],
-                  assessments: assessments || [],
-                  // Repost metadata
-                  repostedFrom: materialData.user?.name || "Unknown",
-                  repostedFromSchool: materialData.user?.profile?.school_place || "",
-                  repostedAt: new Date().toISOString(),
-                  user_id: user.id,
-                  // Stats (reset for reposted)
-                  likes_count: 0,
-                  downloads_count: 0,
-                };
-                
-                repostedModules.push(repostedModule);
-                localStorage.setItem("repostedModules", JSON.stringify(repostedModules));
-                showToast("Modul berhasil direpost ke koleksi Anda! Anda dapat mengeditnya.", "success");
-              }}
+              onClick={handleRepost}
               className="flex items-center gap-2 px-3 py-2 rounded-lg bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors"
             >
               <svg

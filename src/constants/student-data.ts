@@ -89,6 +89,22 @@ export const MOCK_MATERIALS: Material[] = [
   },
 ];
 
+export interface RepostSourceTeacher {
+  id: number;
+  name: string;
+  avatar: string | null;
+}
+
+export interface RepostSourceClass {
+  id: number;
+  name: string;
+}
+
+export interface RepostSource {
+  teacher: RepostSourceTeacher;
+  class: RepostSourceClass;
+}
+
 // Interface untuk latihan soal
 export interface Exercise {
   id: number;
@@ -97,13 +113,18 @@ export interface Exercise {
   totalQuestions: number;
   duration: number; // menit
   deadline: string;
-  isCompleted: boolean;
-  score?: number;
+
+  // Attempt / status
+  is_completed: boolean;
+  result_score: number | null;
+  attempt_id: number | null;
+
+  // Repost
+  is_repost: boolean;
+  reposted_from: RepostSource | null;
+
+  // Optional (detail view)
   questions?: Question[];
-  // Repost fields
-  repostedFrom?: string; // Original author name
-  originalId?: number; // Original exercise ID
-  isPublic?: boolean; // Can be reposted by others
 }
 
 export interface Question {

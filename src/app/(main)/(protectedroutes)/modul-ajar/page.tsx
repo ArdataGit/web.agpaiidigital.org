@@ -25,16 +25,37 @@ interface FaseOption {
 interface CardData {
   id: string;
   user_id?: number;
-  type: string;
-  grade?: { id: number; description: string };
-  fase?: { id: number; nama_fase: string; deskripsi: string };
   topic: string;
   created_at: string;
   image: string;
+
+  // stats
   downloads?: number;
   likes_count?: number;
+
+  // jenjang & fase
   jenjangId?: number;
   faseId?: number;
+  fase?: {
+    id: number;
+    nama_fase: string;
+    deskripsi: string;
+  };
+
+  // ✅ AUTHOR
+  author?: {
+    id: number;
+    name: string;
+    school?: string;
+  };
+
+  // 🔁 REPOST METADATA
+  is_repost?: boolean;
+  reposted_from?: {
+    user_name?: string;
+    school?: string;
+    module_id?: number;
+  };
 }
 
 const ModulAjarPage: React.FC = () => {
@@ -175,21 +196,45 @@ const ModulAjarPage: React.FC = () => {
         return;
       }
 
-      const mappedData = data.map((module: any) => ({
+      const mappedData: CardData[] = data.map((module: any) => ({
         id: module.id.toString(),
         user_id: module.user_id,
         topic: module.judul,
         image: module.thumbnail,
         created_at: module.created_at,
-        downloads: module.downloads_count || 0,
-        likes_count: module.likes_count || 0,
-        jenjangId: module.jenjang?.id_jenjang || module.jenjang_id,
-        faseId: module.fase?.id_fase || module.fase_id,
-        fase: {
-          id: module.fase?.id_fase || 0,
-          nama_fase: module.fase?.nama_fase || "",
-          deskripsi: module.fase?.deskripsi || "",
-        },
+
+        downloads: module.downloads_count ?? 0,
+        likes_count: module.likes_count ?? 0,
+
+        jenjangId: module.jenjang?.id_jenjang ?? module.jenjang_id,
+        faseId: module.fase?.id_fase ?? module.fase_id,
+        fase: module.fase
+          ? {
+              id: module.fase.id_fase,
+              nama_fase: module.fase.nama_fase,
+              deskripsi: module.fase.deskripsi,
+            }
+          : undefined,
+
+        // ✅ AUTHOR (PEMILIK MODUL SAAT INI)
+        author: module.user
+          ? {
+              id: module.user.id,
+              name: module.user.name,
+              school: module.user.profile?.school_place,
+            }
+          : undefined,
+
+        // 🔁 REPOST (SUMBER ASLI)
+        is_repost: Boolean(module.is_repost),
+        reposted_from:
+          module.is_repost && module.repost_source
+            ? {
+                user_name: module.repost_source.user?.name,
+                school: module.repost_source.user?.profile?.school_place,
+                module_id: module.repost_source.id,
+              }
+            : undefined,
       }));
 
       setCards((prev) => [...prev, ...mappedData]);
@@ -688,9 +733,30 @@ const ModulAjarPage: React.FC = () => {
                       • {item.fase?.nama_fase || ""} (
                       {item.grade?.description || "Kelas"})
                     </span>
+                    {item.is_repost && item.reposted_from && (
+                      <div className="mb-1">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 text-purple-700 text-[11px] font-medium rounded-full">
+                          Repost dari{" "}
+                          {item.reposted_from.user_name || "Guru lain"}
+                        </span>
+                      </div>
+                    )}
                     <h3 className="font-bold text-gray-800 mt-1 line-clamp-2 text-lg">
                       {item.topic}
                     </h3>
+                    {/* Author */}
+                    {item.author && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Oleh{" "}
+                        <span className="font-medium">{item.author.name}</span>
+                        {item.author.school && (
+                          <span className="text-gray-400">
+                            {" "}
+                            · {item.author.school}
+                          </span>
+                        )}
+                      </p>
+                    )}
                     <p className="text-sm text-gray-500 mt-2">
                       Diunggah pada:{" "}
                       {moment(item.created_at).format("DD MMMM YYYY")}
