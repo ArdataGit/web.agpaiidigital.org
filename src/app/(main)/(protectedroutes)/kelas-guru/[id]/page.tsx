@@ -97,6 +97,20 @@ type ClassDetail = {
   total_students: number;
   is_active: boolean;
 };
+type RepostableExercise = {
+  id: number;
+  title: string;
+  description: string;
+  duration: number;
+  deadline: string;
+  totalQuestions: number;
+  author: {
+    teacher_id: number;
+    teacher_name: string;
+    class_id: number;
+    class_name: string;
+  };
+};
 
 export default function KelasGuruDetailPage() {
   const params = useParams();
@@ -104,6 +118,11 @@ export default function KelasGuruDetailPage() {
   const classId = Number(params.id);
 
   // States
+
+  const [repostExercises, setRepostExercises] = useState<RepostableExercise[]>(
+    []
+  );
+  const [loadingRepostExercises, setLoadingRepostExercises] = useState(false);
   const [classInfo, setClassInfo] = useState<ClassDetail | null>(null);
   const [loadingClass, setLoadingClass] = useState(true);
   const [students, setStudents] = useState<Student[]>([]);
@@ -232,6 +251,48 @@ export default function KelasGuruDetailPage() {
   };
 
   // Fetch Functions
+  const fetchExerciseQuestions = async (exerciseId: number) => {
+    const token = localStorage.getItem("access_token");
+
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/classedu-exercises/${exerciseId}/questions`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (!res.ok) throw new Error("Gagal fetch soal latihan");
+
+    const json = await res.json();
+    return (json.data || []).map(normalizeQuestion);
+  };
+  const fetchRepostableExercises = async () => {
+    try {
+      setLoadingRepostExercises(true);
+      const token = localStorage.getItem("access_token");
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/exercises/repostable`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!res.ok) throw new Error("Gagal fetch latihan repost");
+
+      const json = await res.json();
+      setRepostExercises(json.data || []);
+    } catch (e) {
+      console.error("Fetch repostable exercises gagal", e);
+      setRepostExercises([]);
+    } finally {
+      setLoadingRepostExercises(false);
+    }
+  };
   const fetchClassDetail = async () => {
     try {
       const token = localStorage.getItem("access_token");
@@ -477,23 +538,35 @@ export default function KelasGuruDetailPage() {
     }
   };
 
-  const handleRepostExercise = (
-    publicExercise: (typeof PUBLIC_EXERCISES)[0]
-  ) => {
-    const newExercise: Exercise = {
-      id: Date.now(),
-      title: publicExercise.title,
-      description: publicExercise.description,
-      totalQuestions: publicExercise.totalQuestions,
-      duration: publicExercise.duration,
-      deadline: publicExercise.deadline,
-      isCompleted: false,
-      questions: publicExercise.questions ? [...publicExercise.questions] : [],
-      repostedFrom: publicExercise.authorName,
-      originalId: publicExercise.id,
-    };
-    setExercises([newExercise, ...exercises]);
-    setShowRepostExerciseModal(false);
+  const handleRepostExercise = async (exerciseId: number) => {
+    try {
+      const token = localStorage.getItem("access_token");
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/classes/${classId}/exercises/${exerciseId}/repost`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({}), // deadline optional
+        }
+      );
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "Gagal repost latihan");
+      }
+
+      // refresh latihan kelas
+      await fetchExercises();
+
+      setShowRepostExerciseModal(false);
+    } catch (e: any) {
+      console.error(e);
+      alert(e.message || "Gagal repost latihan");
+    }
   };
 
   const handleEditMaterial = (material: Material) => {
@@ -773,23 +846,40 @@ export default function KelasGuruDetailPage() {
     }
   };
 
-  const handleOpenExerciseDetail = (exercise: Exercise) => {
-    setSelectedExercise({
-      ...exercise,
-      questions: (exercise.questions || []).map(normalizeQuestion),
-    });
-    setSelectedQuestions(
-      exercise.questions?.map((q: any) => String(q.id)) || []
-    );
-    setShowExerciseDetailModal(true);
+  const handleOpenExerciseDetail = async (exercise: Exercise) => {
+    try {
+      const questions = await fetchExerciseQuestions(exercise.id);
+
+      setSelectedExercise({
+        ...exercise,
+        questions,
+      });
+
+      setSelectedQuestions(questions.map((q) => String(q.id)));
+      setShowExerciseDetailModal(true);
+    } catch (e) {
+      console.error(e);
+      alert("Gagal memuat soal latihan");
+    }
   };
 
   const handleToggleQuestion = (questionId: string) => {
-    if (selectedQuestions.includes(questionId)) {
-      setSelectedQuestions(selectedQuestions.filter((id) => id !== questionId));
-    } else {
-      setSelectedQuestions([...selectedQuestions, questionId]);
-    }
+    const question = bankQuestions.find((q) => q.id === questionId);
+    if (!question || !selectedExercise) return;
+
+    // Tambah ke selectedQuestions (ID)
+    setSelectedQuestions((prev) =>
+      prev.includes(questionId) ? prev : [...prev, questionId]
+    );
+
+    // Tambah ke daftar soal latihan (UI)
+    setSelectedExercise((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        questions: [...(prev.questions || []), question],
+      };
+    });
   };
 
   const handleRemoveQuestion = (questionId: string) => {
@@ -1135,7 +1225,7 @@ export default function KelasGuruDetailPage() {
                             attendanceData[student.id] === option.value
                               ? option.value === "hadir"
                                 ? "border-green-500 bg-green-50"
-                                : option.value === "tidak_hadir"
+                                : option.value === "alpa"
                                 ? "border-red-500 bg-red-50"
                                 : option.value === "izin"
                                 ? "border-blue-500 bg-blue-50"
@@ -1309,7 +1399,10 @@ export default function KelasGuruDetailPage() {
                   Bank Soal
                 </Link>
                 <button
-                  onClick={() => setShowRepostExerciseModal(true)}
+                  onClick={() => {
+                    setShowRepostExerciseModal(true);
+                    fetchRepostableExercises();
+                  }}
                   className="flex items-center gap-1 px-3 py-1.5 bg-purple-600 text-white text-xs font-medium rounded-lg hover:bg-purple-700 transition"
                 >
                   <svg
@@ -1372,12 +1465,29 @@ export default function KelasGuruDetailPage() {
                         )}
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-semibold text-slate-700">
-                          {exercise.title}
-                        </h4>
-                        <p className="text-xs text-slate-500 mt-1">
-                          {exercise.description}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-semibold text-slate-700">
+                            {exercise.title}
+                          </h4>
+
+                          {exercise.is_repost && (
+                            <span
+                              className="px-2 py-0.5 text-[10px] font-semibold rounded-full 
+                     bg-purple-100 text-purple-700 border border-purple-200"
+                            >
+                              Repost
+                            </span>
+                          )}
+                        </div>
+                        {exercise.is_repost && exercise.reposted_from && (
+                          <p className="text-[10px] text-purple-600 mt-1">
+                            Repost dari{" "}
+                            <strong>
+                              {exercise.reposted_from.teacher.name}
+                            </strong>{" "}
+                            • {exercise.reposted_from.class.name}
+                          </p>
+                        )}
                         <div className="flex items-center gap-3 mt-2 text-xs text-slate-400">
                           <span>{exercise.totalQuestions} soal</span>
                           <span>•</span>
@@ -2460,56 +2570,64 @@ export default function KelasGuruDetailPage() {
               </button>
             </div>
             <div className="space-y-3">
-              {PUBLIC_EXERCISES.map((exercise) => (
-                <div
-                  key={exercise.id}
-                  className="border border-slate-200 rounded-xl p-4 hover:border-purple-300 hover:bg-purple-50/30 transition"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 bg-purple-100 rounded-lg">
-                      <ClipboardDocumentListIcon className="size-5 text-purple-600" />
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-slate-700 text-sm">
-                        {exercise.title}
-                      </h4>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        {exercise.description}
-                      </p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <span className="text-[10px] text-slate-400">
-                          {exercise.totalQuestions} soal
-                        </span>
-                        <span className="text-slate-300">•</span>
-                        <span className="text-[10px] text-slate-400">
-                          {exercise.duration} menit
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1 mt-2">
-                        <div className="w-5 h-5 bg-slate-200 rounded-full flex items-center justify-center">
-                          <span className="text-[8px] font-bold text-slate-600">
-                            {exercise.authorName.charAt(0)}
-                          </span>
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-medium text-slate-600">
-                            {exercise.authorName}
-                          </p>
-                          <p className="text-[9px] text-slate-400">
-                            {exercise.authorSchool}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleRepostExercise(exercise)}
-                      className="px-3 py-1.5 bg-purple-600 text-white text-xs font-medium rounded-lg hover:bg-purple-700 transition"
-                    >
-                      Repost
-                    </button>
-                  </div>
+              {loadingRepostExercises ? (
+                <p className="text-sm text-slate-400">Memuat latihan...</p>
+              ) : repostExercises.length === 0 ? (
+                <div className="text-center py-8 text-slate-500 text-sm">
+                  Tidak ada latihan yang bisa direpost
                 </div>
-              ))}
+              ) : (
+                repostExercises.map((exercise) => (
+                  <div
+                    key={exercise.id}
+                    className="border border-slate-200 rounded-xl p-4 hover:border-purple-300 hover:bg-purple-50/30 transition"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-purple-100 rounded-lg">
+                        <ClipboardDocumentListIcon className="size-5 text-purple-600" />
+                      </div>
+
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-slate-700 text-sm">
+                          {exercise.title}
+                        </h4>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          {exercise.description}
+                        </p>
+
+                        <div className="flex items-center gap-2 mt-2 text-[10px] text-slate-400">
+                          <span>{exercise.totalQuestions} soal</span>
+                          <span>•</span>
+                          <span>{exercise.duration} menit</span>
+                        </div>
+
+                        <div className="flex items-center gap-1 mt-2">
+                          <div className="w-5 h-5 bg-slate-200 rounded-full flex items-center justify-center">
+                            <span className="text-[8px] font-bold text-slate-600">
+                              {exercise.author.teacher_name.charAt(0)}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-medium text-slate-600">
+                              {exercise.author.teacher_name}
+                            </p>
+                            <p className="text-[9px] text-slate-400">
+                              {exercise.author.class_name}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => handleRepostExercise(exercise.id)}
+                        className="px-3 py-1.5 bg-purple-600 text-white text-xs font-medium rounded-lg hover:bg-purple-700 transition"
+                      >
+                        Repost
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
             {PUBLIC_EXERCISES.length === 0 && (
               <div className="text-center py-8 text-slate-500 text-sm">
