@@ -16,6 +16,7 @@ const DetailPerangkatAjarPage: React.FC = () => {
   const [contents, setContents] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [loadingPreviews, setLoadingPreviews] = useState<{ [key: string]: boolean }>({});
+  const [previewErrors, setPreviewErrors] = useState<{ [key: string]: boolean }>({});
 
   useEffect(() => {
     const fetchMaterialData = async () => {
@@ -74,7 +75,7 @@ const DetailPerangkatAjarPage: React.FC = () => {
     const match = url.match(regExp);
     const videoId = match && match[2].length === 11 ? match[2] : null;
 
-    return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+    return videoId ? `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&enablejsapi=1&origin=${typeof window !== 'undefined' ? window.location.origin : ''}` : null;
   };
 
   const handleOpenURL = (url: string) => {
@@ -406,24 +407,77 @@ const DetailPerangkatAjarPage: React.FC = () => {
                 {isYoutubeVideo(content.format_doc) &&
                   getYoutubeEmbedUrl(content.url || content.value) && (
                     <div className="bg-white p-4">
-                      <div
-                        className="relative w-full"
-                        style={{ paddingBottom: "56.25%" }}
-                      >
-                        <iframe
-                          src={getYoutubeEmbedUrl(content.url || content.value) || ""}
-                          className="absolute top-0 left-0 w-full h-full rounded"
-                          title={content.name}
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                          onLoad={() => {
-                            setLoadingPreviews((prev) => ({
-                              ...prev,
-                              [`content-${content.id}`]: false,
-                            }));
-                          }}
-                        />
-                      </div>
+                      {previewErrors[`youtube-${content.id}`] ? (
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+                          <svg
+                            className="w-12 h-12 text-red-400 mx-auto mb-3"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                          <p className="text-red-700 font-medium mb-2">
+                            Video tidak dapat ditampilkan
+                          </p>
+                          <p className="text-red-600 text-sm mb-4">
+                            Video mungkin bersifat privat atau memiliki pembatasan embed
+                          </p>
+                          <button
+                            onClick={() => handleOpenURL(content.url || content.value)}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm transition-colors"
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                              />
+                            </svg>
+                            Buka di YouTube
+                          </button>
+                        </div>
+                      ) : (
+                        <div
+                          className="relative w-full"
+                          style={{ paddingBottom: "56.25%" }}
+                        >
+                          <iframe
+                            src={getYoutubeEmbedUrl(content.url || content.value) || ""}
+                            className="absolute top-0 left-0 w-full h-full rounded"
+                            title={content.name}
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                            onLoad={() => {
+                              setLoadingPreviews((prev) => ({
+                                ...prev,
+                                [`content-${content.id}`]: false,
+                              }));
+                            }}
+                            onError={() => {
+                              setPreviewErrors((prev) => ({
+                                ...prev,
+                                [`youtube-${content.id}`]: true,
+                              }));
+                              setLoadingPreviews((prev) => ({
+                                ...prev,
+                                [`content-${content.id}`]: false,
+                              }));
+                            }}
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
 
