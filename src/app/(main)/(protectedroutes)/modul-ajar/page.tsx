@@ -68,7 +68,8 @@ const ModulAjarPage: React.FC = () => {
   const [page, setPage] = useState<number>(1);
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [searchInputValue, setSearchInputValue] = useState<string>(""); // What user types
+  const [searchQuery, setSearchQuery] = useState<string>(""); // Debounced value sent to API
   const [sortBy, setSortBy] = useState<"latest" | "likes" | "downloads" | "reposts">(
     "likes"
   );
@@ -97,6 +98,15 @@ const ModulAjarPage: React.FC = () => {
 
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const LIMIT = 5;
+
+  // Debounce search input - wait 500ms after user stops typing
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchQuery(searchInputValue);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchInputValue]);
 
   // Fetch Jenjang & Fase
   useEffect(() => {
@@ -175,6 +185,15 @@ const ModulAjarPage: React.FC = () => {
         endpoint += `&search=${encodeURIComponent(searchQuery)}`;
       }
 
+      // Add jenjang and fase filters to API call
+      if (selectedJenjang) {
+        endpoint += `&jenjang_id=${selectedJenjang}`;
+      }
+
+      if (selectedFase) {
+        endpoint += `&fase_id=${selectedFase}`;
+      }
+
       const res = await axios.get(endpoint);
       const data = res.data.data || [];
       const meta = res.data.meta;
@@ -235,14 +254,14 @@ const ModulAjarPage: React.FC = () => {
     }
   };
 
-  // Reset dan fetch saat tab/search berubah
+  // Reset dan fetch saat tab/search/filter berubah
   useEffect(() => {
     setCards([]);
     setFilteredCards([]);
     setPage(1);
     setHasMore(true);
     fetchCards(1, false);
-  }, [activeTab, user?.id, searchQuery]);
+  }, [activeTab, user?.id, searchQuery, selectedJenjang, selectedFase]);
 
   // Infinite scroll observer
   useEffect(() => {
@@ -433,11 +452,11 @@ const ModulAjarPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as any)}
-            className="p-3 border border-gray-300 rounded-lg text-sm text-gray-600 bg-white"
+            className="w-full sm:w-auto p-3 border border-gray-300 rounded-lg text-sm text-gray-600 bg-white focus:outline-none focus:ring-2 focus:ring-[#006557]"
           >
             <option value="likes">Paling Disukai</option>
             <option value="downloads">Paling Banyak Diunduh</option>
@@ -445,25 +464,53 @@ const ModulAjarPage: React.FC = () => {
             <option value="latest">Terbaru</option>
           </select>
 
-          <button
-            onClick={() => setSearchQuery("")}
-            className="flex-1 py-3 bg-white border border-gray-300 rounded-full text-gray-600 font-medium flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-            Cari materi ajar
-          </button>
+          <div className="relative w-full sm:flex-1">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg
+                className="w-5 h-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </div>
+            <input
+              type="text"
+              value={searchInputValue}
+              onChange={(e) => setSearchInputValue(e.target.value)}
+              placeholder="Cari materi ajar..."
+              className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-full text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#006557] focus:border-transparent"
+            />
+            {searchInputValue && (
+              <button
+                onClick={() => {
+                  setSearchInputValue("");
+                  setSearchQuery("");
+                }}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+              >
+                <svg
+                  className="w-5 h-5 text-gray-400 hover:text-gray-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -686,61 +733,63 @@ const ModulAjarPage: React.FC = () => {
                 {/* Area klik untuk detail */}
                 <div
                   onClick={() => router.push(`/modul-ajar/${item.id}`)}
-                  className="flex gap-4 flex-1"
+                  className="flex flex-col sm:flex-row gap-3 sm:gap-4 flex-1"
                 >
-                  <div className="flex-shrink-0">
-                    <div className="w-20 h-20 rounded-xl overflow-hidden bg-gray-100">
-                      <img
-                        src={resolveThumbnail(item.image)}
-                        alt={item.topic}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src =
-                            "/img/thumbnailmodul.png";
-                        }}
-                      />
+                  <div className="flex gap-3 sm:gap-4">
+                    <div className="flex-shrink-0">
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-gray-100">
+                        <img
+                          src={resolveThumbnail(item.image)}
+                          alt={item.topic}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src =
+                              "/img/thumbnailmodul.png";
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[10px] sm:text-xs text-[#006557] font-semibold">
+                        • {item.fase?.nama_fase || ""} (
+                        {item.fase?.deskripsi || "Kelas"})
+                      </span>
+                      {item.is_repost && item.reposted_from && (
+                        <div className="mb-1">
+                          <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 bg-purple-100 text-purple-700 text-[10px] sm:text-[11px] font-medium rounded-full">
+                            Repost dari{" "}
+                            {item.reposted_from.user_name || "Guru lain"}
+                          </span>
+                        </div>
+                      )}
+                      <h3 className="font-bold text-gray-800 mt-1 line-clamp-2 text-sm sm:text-lg">
+                        {item.topic}
+                      </h3>
+                      {/* Author */}
+                      {item.author && (
+                        <p className="text-[10px] sm:text-xs text-gray-500 mt-1 truncate">
+                          Oleh{" "}
+                          <span className="font-medium">{item.author.name}</span>
+                          {item.author.school && (
+                            <span className="text-gray-400 hidden sm:inline">
+                              {" "}
+                              · {item.author.school}
+                            </span>
+                          )}
+                        </p>
+                      )}
+                      <p className="text-[10px] sm:text-sm text-gray-500 mt-1 sm:mt-2">
+                        {moment(item.created_at).format("DD MMM YYYY")}
+                      </p>
                     </div>
                   </div>
 
-                  <div className="flex-1 min-w-0">
-                    <span className="text-xs text-[#006557] font-semibold">
-                      • {item.fase?.nama_fase || ""} (
-                      {item.grade?.description || "Kelas"})
-                    </span>
-                    {item.is_repost && item.reposted_from && (
-                      <div className="mb-1">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 text-purple-700 text-[11px] font-medium rounded-full">
-                          Repost dari{" "}
-                          {item.reposted_from.user_name || "Guru lain"}
-                        </span>
-                      </div>
-                    )}
-                    <h3 className="font-bold text-gray-800 mt-1 line-clamp-2 text-lg">
-                      {item.topic}
-                    </h3>
-                    {/* Author */}
-                    {item.author && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        Oleh{" "}
-                        <span className="font-medium">{item.author.name}</span>
-                        {item.author.school && (
-                          <span className="text-gray-400">
-                            {" "}
-                            · {item.author.school}
-                          </span>
-                        )}
-                      </p>
-                    )}
-                    <p className="text-sm text-gray-500 mt-2">
-                      Diunggah pada:{" "}
-                      {moment(item.created_at).format("DD MMMM YYYY")}
-                    </p>
-                  </div>
-
-                  <div className="flex flex-col items-end justify-center gap-3 text-sm text-gray-600">
-                    <div className="flex items-center gap-2">
+                  {/* Stats - responsive layout */}
+                  <div className="flex sm:flex-col items-center sm:items-end justify-start sm:justify-center gap-4 sm:gap-3 text-xs sm:text-sm text-gray-600 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100">
+                    <div className="flex items-center gap-1 sm:gap-2">
                       <svg
-                        className="w-5 h-5 text-gray-500"
+                        className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -756,9 +805,9 @@ const ModulAjarPage: React.FC = () => {
                         {item.likes_count || 0}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 sm:gap-2">
                       <svg
-                        className="w-5 h-5 text-gray-500"
+                        className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -772,9 +821,9 @@ const ModulAjarPage: React.FC = () => {
                       </svg>
                       <span className="font-medium">{item.downloads || 0}</span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 sm:gap-2">
                       <svg
-                        className="w-5 h-5 text-gray-500"
+                        className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"

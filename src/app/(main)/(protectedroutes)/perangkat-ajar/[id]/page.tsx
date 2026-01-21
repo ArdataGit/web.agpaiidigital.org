@@ -27,17 +27,8 @@ const DetailPerangkatAjarPage: React.FC = () => {
           `https://2024.agpaiidigital.org/api/bahanajar/${materialId}`
         );
 
-        const fetchedContents = response.data.data.contents || [];
         setMaterialData(response.data.data);
-        setContents(fetchedContents);
-        
-        // Initialize loading states for all contents
-        const initialLoadingStates: { [key: string]: boolean } = {};
-        fetchedContents.forEach((content: any) => {
-          initialLoadingStates[`content-${content.id}`] = true;
-        });
-        setLoadingPreviews(initialLoadingStates);
-        
+        setContents(response.data.data.contents || []);
         setLoading(false);
       } catch (error) {
         console.error("Error fetching material data:", error);
@@ -493,6 +484,7 @@ const DetailPerangkatAjarPage: React.FC = () => {
                               }));
                             }}
                             onError={() => handleIframeError(content.id, 'youtube')}
+
                           />
                         </div>
                       )}
