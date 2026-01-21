@@ -1,27 +1,19 @@
-"use client";
+'use client';
 
-import Script from "next/script";
-import { useEffect } from "react";
+import { useEffect, useRef } from 'react';
+import { initOneSignal } from '@/utils/onesignal';
+import { useAuth } from '@/utils/context/auth_context';
 
 export default function OneSignalProvider() {
+  const initialized = useRef(false);
+  const { user } = useAuth();
+
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (initialized.current) return;
 
-    window.OneSignalDeferred = window.OneSignalDeferred || [];
-    window.OneSignalDeferred.push(async function (OneSignal) {
-      await OneSignal.init({
-        appId: "1436bf70-cf4b-495e-8528-b1fcc58df79d",
-        notifyButton: { enable: true },
-      });
-    });
-  }, []);
+    initialized.current = true;
+    initOneSignal(user?.id);
+  }, [user?.id]);
 
-  return (
-    <>
-      <Script
-        src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"
-        strategy="afterInteractive"
-      />
-    </>
-  );
+  return null;
 }

@@ -28,10 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           async
           src="https://www.googletagmanager.com/gtag/js?id=G-6MTB31ZE0G"
         />
-        <Script
-          id="ga"
-          strategy="afterInteractive"
-        >{`
+        <Script id="ga" strategy="afterInteractive">{`
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
@@ -40,13 +37,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
 
       <body className={inter.className}>
-        <OneSignalProvider />
-
         <SpeedInsights />
         <Analytics />
 
         <ReactQueryProvider>
           <AuthProvider>
+            {/* ✅ OneSignal HARUS DI SINI */}
+            <OneSignalProvider />
+
             <UnreadProvider>
               <FirebaseTrackingProvider>
                 {children}
@@ -55,11 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </AuthProvider>
         </ReactQueryProvider>
 
-        <Toaster
-          position="top-center"
-          richColors
-          duration={2000}
-        />
+        <Toaster position="top-center" richColors duration={2000} />
       </body>
     </html>
   );

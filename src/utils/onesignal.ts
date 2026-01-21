@@ -1,43 +1,28 @@
-// Extend Window interface to include OneSignal
-declare global {
-  interface Window {
-    OneSignal: any[];
-  }
-}
+'use client';
 
-export function initOneSignal(userId?: string | number) {
-  if (typeof window === "undefined") return;
+import OneSignal from 'react-onesignal';
 
-  // Only initialize OneSignal on production domain
+export async function initOneSignal(userId?: string | number) {
+  if (typeof window === 'undefined') return;
+
   const allowedDomains = [
     'web.agpaiidigital.org',
     'localhost',
-    '127.0.0.1'
+    '127.0.0.1',
   ];
-  
-  const currentDomain = window.location.hostname;
-  const isAllowedDomain = allowedDomains.some(domain => currentDomain.includes(domain));
-  
-  if (!isAllowedDomain) {
-    console.log('OneSignal: Skipping initialization on', currentDomain);
-    return;
-  }
 
-  // Initialize OneSignal array if not exists
-  window.OneSignal = window.OneSignal || [];
+  const hostname = window.location.hostname;
+  if (!allowedDomains.some(d => hostname.includes(d))) return;
 
-  // Push initialization function
-  window.OneSignal.push(function () {
-    // @ts-ignore - OneSignal SDK methods
-    window.OneSignal.init({
-      appId: "1436bf70-cf4b-495e-8528-b1fcc58df79d",
-      allowLocalhostAsSecureOrigin: true,
-      notifyButton: { enable: false },
-    });
-
-    if (userId) {
-      // @ts-ignore - OneSignal SDK methods
-      window.OneSignal.setExternalUserId(String(userId));
-    }
+  await OneSignal.init({
+    appId: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID!,
+    notifyButton: { enable: false },
+    allowLocalhostAsSecureOrigin: hostname === 'localhost',
+    serviceWorkerPath: '/OneSignalSDKWorker.js',
+    serviceWorkerUpdaterPath: '/OneSignalSDKUpdaterWorker.js',
   });
+
+  if (userId) {
+    await OneSignal.login(String(userId));
+  }
 }
