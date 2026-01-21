@@ -19,14 +19,18 @@ const nextConfig = {
                 https://www.youtube.com
                 https://www.youtube-nocookie.com
                 https://app.midtrans.com
-                https://simulator.sandbox.midtrans.com;
+                https://simulator.sandbox.midtrans.com
+                https://docs.google.com;
               child-src
                 'self'
                 https://www.youtube.com
                 https://www.youtube-nocookie.com
                 https://app.midtrans.com
-                https://simulator.sandbox.midtrans.com;
-            `.replace(/\s{2,}/g, " ").trim(),
+                https://simulator.sandbox.midtrans.com
+                https://docs.google.com;
+            `
+              .replace(/\s{2,}/g, " ")
+              .trim(),
           },
         ],
       },
@@ -42,7 +46,7 @@ const nextConfig = {
     ],
   },
 
-  // sengaja kamu aktifkan
+  // kamu sengaja aktifkan
   typescript: {
     ignoreBuildErrors: true,
   },

@@ -27,8 +27,17 @@ const DetailPerangkatAjarPage: React.FC = () => {
           `https://2024.agpaiidigital.org/api/bahanajar/${materialId}`
         );
 
+        const fetchedContents = response.data.data.contents || [];
         setMaterialData(response.data.data);
-        setContents(response.data.data.contents || []);
+        setContents(fetchedContents);
+        
+        // Initialize loading states for all contents
+        const initialLoadingStates: { [key: string]: boolean } = {};
+        fetchedContents.forEach((content: any) => {
+          initialLoadingStates[`content-${content.id}`] = true;
+        });
+        setLoadingPreviews(initialLoadingStates);
+        
         setLoading(false);
       } catch (error) {
         console.error("Error fetching material data:", error);
@@ -71,11 +80,13 @@ const DetailPerangkatAjarPage: React.FC = () => {
     if (!url) return null;
 
     const regExp =
-      /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+      /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]{11}).*/;
     const match = url.match(regExp);
-    const videoId = match && match[2].length === 11 ? match[2] : null;
+    const videoId = match ? match[2] : null;
 
-    return videoId ? `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1` : null;
+    if (!videoId) return null;
+
+    return `https://www.youtube.com/embed/${videoId}?rel=0`;
   };
 
   const handleOpenURL = (url: string) => {
@@ -124,6 +135,17 @@ const DetailPerangkatAjarPage: React.FC = () => {
         alert("Gagal menghapus perangkat ajar.");
       }
     }
+  };
+
+  const handleIframeError = (contentId: string, type: string) => {
+    setPreviewErrors((prev) => ({
+      ...prev,
+      [`${type}-${contentId}`]: true,
+    }));
+    setLoadingPreviews((prev) => ({
+      ...prev,
+      [`content-${contentId}`]: false,
+    }));
   };
 
   if (loading) {
@@ -348,64 +370,67 @@ const DetailPerangkatAjarPage: React.FC = () => {
           </h3>
 
           <div className="space-y-4">
-            {contents.map((content: any) => (
-              <div key={content.id} className="border rounded-lg overflow-hidden relative">
-                {/* Loading Overlay - covers entire card */}
-                {loadingPreviews[`content-${content.id}`] !== false && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-white/95 z-20">
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="w-12 h-12 border-4 border-[#006557] border-t-transparent rounded-full animate-spin"></div>
-                      <p className="text-sm text-gray-600">Memuat konten...</p>
+            {contents.map((content: any) => {
+              // FIXED: Move embedUrl inside the map function where content is available
+              const embedUrl = getYoutubeEmbedUrl(content.url || content.value);
+              
+              return (
+                <div key={content.id} className="border rounded-lg overflow-hidden relative">
+                  {/* Loading Overlay - covers entire card */}
+                  {loadingPreviews[`content-${content.id}`] !== false && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/95 z-20">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="w-12 h-12 border-4 border-[#006557] border-t-transparent rounded-full animate-spin"></div>
+                        <p className="text-sm text-gray-600">Memuat konten...</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* File Info Header */}
+                  <div
+                    className="flex items-center bg-gray-100 p-4 cursor-pointer hover:bg-gray-200 transition"
+                    onClick={() => handleOpenURL(content.url || content.value)}
+                  >
+                    <div className="w-10 h-10 flex-shrink-0 mr-4">
+                      <img
+                        src={
+                          content.format_doc === "Pdf"
+                            ? "/icons/pdf.png"
+                            : content.format_doc === "Youtube"
+                            ? "/icons/youtube.png"
+                            : content.format_doc === "Doc" ||
+                              content.format_doc === "Word"
+                            ? "/icons/word.png"
+                            : content.format_doc === "PowerPoint" ||
+                              content.format_doc === "Ppt" ||
+                              content.format_doc === "Pptx"
+                            ? "/icons/powerpoint.png"
+                            : content.format_doc === "Excel" ||
+                              content.format_doc === "Xls" ||
+                              content.format_doc === "Xlsx"
+                            ? "/icons/excel.png"
+                            : "https://via.placeholder.com/40?text=?"
+                        }
+                        alt={content.format_doc}
+                        height={40}
+                        className="rounded-md"
+                      />
+                    </div>
+
+                    <div className="flex-1">
+                      <p className="text-gray-800 font-bold">{content.name}</p>
+                      <p className="text-gray-600 text-sm">
+                        Format: {content.format_doc || "-"}
+                      </p>
+                    </div>
+
+                    <div className="text-blue-600 text-sm">
+                      Klik untuk buka di tab baru →
                     </div>
                   </div>
-                )}
 
-                {/* File Info Header */}
-                <div
-                  className="flex items-center bg-gray-100 p-4 cursor-pointer hover:bg-gray-200 transition"
-                  onClick={() => handleOpenURL(content.url || content.value)}
-                >
-                  <div className="w-10 h-10 flex-shrink-0 mr-4">
-                    <img
-                      src={
-                        content.format_doc === "Pdf"
-                          ? "/icons/pdf.png"
-                          : content.format_doc === "Youtube"
-                          ? "/icons/youtube.png"
-                          : content.format_doc === "Doc" ||
-                            content.format_doc === "Word"
-                          ? "/icons/word.png"
-                          : content.format_doc === "PowerPoint" ||
-                            content.format_doc === "Ppt" ||
-                            content.format_doc === "Pptx"
-                          ? "/icons/powerpoint.png"
-                          : content.format_doc === "Excel" ||
-                            content.format_doc === "Xls" ||
-                            content.format_doc === "Xlsx"
-                          ? "/icons/excel.png"
-                          : "https://via.placeholder.com/40?text=?"
-                      }
-                      alt={content.format_doc}
-                      height={40}
-                      className="rounded-md"
-                    />
-                  </div>
-
-                  <div className="flex-1">
-                    <p className="text-gray-800 font-bold">{content.name}</p>
-                    <p className="text-gray-600 text-sm">
-                      Format: {content.format_doc || "-"}
-                    </p>
-                  </div>
-
-                  <div className="text-blue-600 text-sm">
-                    Klik untuk buka di tab baru →
-                  </div>
-                </div>
-
-                {/* Preview Section */}
-                {isYoutubeVideo(content.format_doc) &&
-                  getYoutubeEmbedUrl(content.url || content.value) && (
+                  {/* Preview Section */}
+                  {isYoutubeVideo(content.format_doc) && embedUrl && (
                     <div className="bg-white p-4">
                       {previewErrors[`youtube-${content.id}`] ? (
                         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
@@ -454,10 +479,12 @@ const DetailPerangkatAjarPage: React.FC = () => {
                           style={{ paddingBottom: "56.25%" }}
                         >
                           <iframe
-                            src={getYoutubeEmbedUrl(content.url || content.value) || ""}
+                            src={embedUrl}
                             className="absolute top-0 left-0 w-full h-full rounded"
                             title={content.name}
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            frameBorder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            referrerPolicy="strict-origin-when-cross-origin"
                             allowFullScreen
                             onLoad={() => {
                               setLoadingPreviews((prev) => ({
@@ -465,57 +492,51 @@ const DetailPerangkatAjarPage: React.FC = () => {
                                 [`content-${content.id}`]: false,
                               }));
                             }}
-                            onError={() => {
-                              setPreviewErrors((prev) => ({
-                                ...prev,
-                                [`youtube-${content.id}`]: true,
-                              }));
-                              setLoadingPreviews((prev) => ({
-                                ...prev,
-                                [`content-${content.id}`]: false,
-                              }));
-                            }}
+                            onError={() => handleIframeError(content.id, 'youtube')}
                           />
                         </div>
                       )}
                     </div>
                   )}
 
-                {isPdfFile(content.url || content.value) && (
-                  <div className="bg-white p-4">
-                    <iframe
-                      src={getFullUrl(content.url || content.value)}
-                      className="w-full h-[600px] border-0 rounded"
-                      title={content.name}
-                      onLoad={() => {
-                        setLoadingPreviews((prev) => ({
-                          ...prev,
-                          [`content-${content.id}`]: false,
-                        }));
-                      }}
-                    />
-                  </div>
-                )}
+                  {isPdfFile(content.url || content.value) && (
+                    <div className="bg-white p-4">
+                      <iframe
+                        src={getFullUrl(content.url || content.value)}
+                        className="w-full h-[600px] border-0 rounded"
+                        title={content.name}
+                        onLoad={() => {
+                          setLoadingPreviews((prev) => ({
+                            ...prev,
+                            [`content-${content.id}`]: false,
+                          }));
+                        }}
+                        onError={() => handleIframeError(content.id, 'pdf')}
+                      />
+                    </div>
+                  )}
 
-                {isOfficeFile(content.url || content.value) && (
-                  <div className="bg-white p-4">
-                    <iframe
-                      src={`https://docs.google.com/viewer?url=${encodeURIComponent(
-                        getFullUrl(content.url || content.value)
-                      )}&embedded=true`}
-                      className="w-full h-[600px] border-0 rounded"
-                      title={content.name}
-                      onLoad={() => {
-                        setLoadingPreviews((prev) => ({
-                          ...prev,
-                          [`content-${content.id}`]: false,
-                        }));
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-            ))}
+                  {isOfficeFile(content.url || content.value) && (
+                    <div className="bg-white p-4">
+                      <iframe
+                        src={`https://docs.google.com/viewer?url=${encodeURIComponent(
+                          getFullUrl(content.url || content.value)
+                        )}&embedded=true`}
+                        className="w-full h-[600px] border-0 rounded"
+                        title={content.name}
+                        onLoad={() => {
+                          setLoadingPreviews((prev) => ({
+                            ...prev,
+                            [`content-${content.id}`]: false,
+                          }));
+                        }}
+                        onError={() => handleIframeError(content.id, 'office')}
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
