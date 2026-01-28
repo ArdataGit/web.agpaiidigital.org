@@ -55,10 +55,7 @@ export default function ZegoLiveViewer({
           },
           showPreJoinView: false,
           showLeavingView: false,
-          turnOnCameraWhenJoining: false,
-          turnOnMicrophoneWhenJoining: false,
-          showMyCameraToggleButton: false,
-          showMyMicrophoneToggleButton: false,
+          // Audience cannot configure camera/mic params, so we omit them
           showTextChat: true,
           showUserList: true, // Enable viewer list (Instagram-like)
           maxUsers: 1000,
