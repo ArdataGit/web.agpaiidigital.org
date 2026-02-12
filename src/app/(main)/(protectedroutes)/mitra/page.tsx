@@ -21,6 +21,7 @@ interface MitraItem {
 		id: number | null;
 		nama: string | null;
 	};
+    judul_campaign?: string;
     // Helper fields for frontend state
     isRegistered?: boolean;
 }
@@ -74,9 +75,25 @@ const MitraPage: React.FC = () => {
 				const res = await axios.get<{
 					success: boolean;
 					data: MitraItem[];
-				}>(`${API_URL}/api/mitra`);
+				}>(`${API_URL}/api/mitra?t=${new Date().getTime()}`);
                 
-				setMitraList(res.data.data || []);
+                const initialList = res.data.data || [];
+                
+                // Fetch details for each item to get judul_campaign
+                const detailedList = await Promise.all(initialList.map(async (item) => {
+                    try {
+						const detailRes = await axios.get(`${API_URL}/api/mitra/getdata/${item.id}?t=${new Date().getTime()}`);
+                        return {
+                            ...item,
+                            judul_campaign: detailRes.data.judul_campaign || item.judul_campaign // Use detail if available
+                        };
+                    } catch (err) {
+                        console.error(`Failed to fetch detail for mitra ${item.id}`, err);
+                        return item;
+                    }
+                }));
+
+				setMitraList(detailedList);
 			} catch (error) {
 				console.error("Gagal mengambil data mitra:", error);
 			} finally {
@@ -90,6 +107,7 @@ const MitraPage: React.FC = () => {
     // Filter Logic
     const filteredList = mitraList.filter(item => 
         (item.mitra.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        item.judul_campaign?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.deskripsi?.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
@@ -131,7 +149,7 @@ const MitraPage: React.FC = () => {
 	return (
 		<div className="pt-[4.21rem] bg-gray-50 min-h-screen">
 			<TopBar 
-                withBackButton 
+                withBackButton={!isMitra}
                 rightContent={isMitra ? myMitraButton : null}
             >
                 MITRA AGPAII
@@ -210,6 +228,7 @@ const MitraPage: React.FC = () => {
 
 				{!loading && filteredList.length > 0 && (
 					<motion.div 
+                        key={filteredList.map(i => i.id).join(',')}
                         variants={container}
                         initial="hidden"
                         animate="show"
@@ -260,8 +279,8 @@ const MitraPage: React.FC = () => {
                                         <FiArrowRight className="w-4 h-4" />
                                     </div>
 
-                                    <h3 className="font-bold text-gray-800 text-lg leading-tight line-clamp-1 group-hover:text-green-600 transition-colors">
-    									{item.mitra}
+                                    <h3 className="font-bold text-gray-800 text-lg truncate group-hover:text-green-600 transition-colors">
+    									{item.judul_campaign || item.mitra}
     								</h3>
                                     <div className="flex items-center gap-1 text-xs text-gray-400 mt-1 font-medium">
                                         <span>

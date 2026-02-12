@@ -21,7 +21,7 @@ export default function MitraProfilePage() {
     });
 
     useEffect(() => {
-        if (auth) {
+        if (auth) { 
             
             setFormData({
                 name: auth.name || "",

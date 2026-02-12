@@ -1,4 +1,4 @@
-"use client";
+"use client"; 
 import { useAuth } from "@/utils/context/auth_context";
 import {
   HomeIcon,

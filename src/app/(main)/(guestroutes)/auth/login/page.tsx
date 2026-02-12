@@ -14,7 +14,7 @@ export default function LoginPage() {
   interface iFormField {
     loginType: "email" | "nik";
     email: string;
-    password?: string;
+    password?: string; 
   }
   const { register, handleSubmit, setValue, watch } = useForm<iFormField>({
     defaultValues: {

@@ -35,7 +35,7 @@ export default function Register() {
   const [selectedRole, setSelectedRole] = useState<{
     name: string;
     value: number;
-  } | null>(null);
+  } | null>(null); 
 
   // Student-specific states
   const [schoolPlace, setSchoolPlace] = useState("");

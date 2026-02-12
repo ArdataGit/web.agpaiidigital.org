@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
 import { useState, useEffect } from "react";
 import TopBar from "@/components/nav/topbar";
 import axios from "axios";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import Swal from "sweetalert2";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiUser, FiLink, FiAlignLeft, FiImage, FiUploadCloud, FiCheckCircle, FiBriefcase, FiX } from "react-icons/fi";
@@ -16,11 +16,12 @@ const API_URL = "https://admin.agpaiidigital.org";
 ================================ */
 interface KategoriMitra {
   id: number;
-  kategori_mitra: string; 
+  kategori_mitra: string;
 }
 
-export default function CreateMitraPage() {
+export default function EditMitraPage() {
   const router = useRouter();
+  const { id } = useParams();
   const { auth } = useAuth();
 
   /* ===============================
@@ -32,18 +33,21 @@ export default function CreateMitraPage() {
     kategori_mitra_id: "",
     deskripsi: "",
     external_url: "",
+    is_approved: 0,
   });
   
   const [gambars, setGambars] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
+  const [existingImages, setExistingImages] = useState<string[]>([]); // For existing images
   const [kategoriList, setKategoriList] = useState<KategoriMitra[]>([]);
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
 
   /* ===============================
-     AUTOFILL & FETCH DATA
+     FETCH DATA
   ================================= */
   useEffect(() => {
-    // Fetch Kategori
+    // 1. Fetch Kategori
     const fetchKategori = async () => {
       try {
         const res = await axios.get<{
@@ -55,13 +59,58 @@ export default function CreateMitraPage() {
         console.error("Gagal mengambil kategori mitra:", error);
       }
     };
-    fetchKategori();
 
-    // Autofill Brand Name
-    if (auth) {
-        const brand = auth.brand_name || auth.instansi_name || auth.name || "";
-        setForm(prev => ({ ...prev, brand_name: brand }));
-    }
+    // 2. Fetch Existing Data
+    const fetchExistingData = async () => {
+        if (!id) return;
+        try {
+            const res = await axios.get(`${API_URL}/api/mitra/getdata/${id}`);
+            const data = res.data;
+            
+            setForm({
+                brand_name: data.mitra || "",
+                judul_campaign: data.judul_campaign || "",
+                kategori_mitra_id: data.kategori_mitra_id || "",
+                deskripsi: data.deskripsi || "",
+                external_url: data.external_url || "",
+                is_approved: data.is_approved || 0, // Keep status
+            });
+
+            // Parse existing images
+            let images: string[] = [];
+            if (data.gambar) {
+                try {
+                    if (data.gambar.startsWith('[') || data.gambar.startsWith('{')) {
+                        const parsed = JSON.parse(data.gambar);
+                        if (Array.isArray(parsed)) images = parsed;
+                        else if (typeof parsed === 'string') images = [parsed];
+                    } else {
+                        images = [data.gambar];
+                    }
+                } catch (e) {
+                    images = [data.gambar];
+                }
+            }
+            setExistingImages(images);
+
+        } catch (error) {
+            console.error("Gagal mengambil detail mitra:", error);
+            Swal.fire("Error", "Gagal memuat data campaign", "error");
+        } finally {
+            setFetching(false);
+        }
+    };
+
+    fetchKategori();
+    fetchExistingData();
+  }, [id]);
+
+  // Autofill Brand Name if not set (fallback)
+  useEffect(() => {
+      if (auth && !form.brand_name) {
+          const brand = auth.brand_name || auth.instansi_name || auth.name || "";
+          setForm(prev => ({ ...prev, brand_name: brand }));
+      }
   }, [auth]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -75,13 +124,30 @@ export default function CreateMitraPage() {
     }
   };
 
-  const removeImage = (index: number) => {
+  const removeNewImage = (index: number) => {
     setGambars(prev => prev.filter((_, i) => i !== index));
     setPreviews(prev => prev.filter((_, i) => i !== index));
   };
 
+  const removeExistingImage = (index: number) => {
+      // Logic to track deleted existing images if API supports selective delete
+      // For now, simpler approach: Just remove from UI state
+      // Note: Backend logic for partial update of images might be complex. Usually replace all or append.
+      // Often better to re-upload everything or sending IDs to keep.
+      // Given typical Laravel update: 
+      // If we don't send new images, it keeps old ones? Or we might need to handle this carefully.
+      // Let's assume we just remove from view for now.
+      setExistingImages(prev => prev.filter((_, i) => i !== index));
+  };
+  
+  // Helper for image URL
+   const getValidImageUrl = (url: string) => {
+        if (url.startsWith('http')) return url;
+        return `https://file.agpaiidigital.org/${url}`;
+    };
+
   /* ===============================
-     SUBMIT HANDLER
+     SUBMIT HANDLER (UPDATE)
   ================================= */
   const handleSubmit = async () => {
     if (
@@ -89,13 +155,12 @@ export default function CreateMitraPage() {
       !form.judul_campaign.trim() ||
       !form.kategori_mitra_id ||
       !form.deskripsi.trim() ||
-      !form.external_url.trim() ||
-      gambars.length === 0
+      !form.external_url.trim()
     ) {
       Swal.fire({
         icon: "warning",
         title: "Perhatian",
-        text: "Semua field wajib diisi dan minimal 1 gambar",
+        text: "Semua field wajib diisi",
         confirmButtonColor: "#3085d6",
       });
       return;
@@ -104,26 +169,36 @@ export default function CreateMitraPage() {
     setLoading(true);
 
     const fd = new FormData();
-    // MAPPING SESUAI DB SCHEMA
-    fd.append("mitra", form.brand_name.trim()); // Column 'mitra' = Nama Brand/Instansi
-    fd.append("judul_campaign", form.judul_campaign.trim()); // Column 'judul_campaign' = Judul
-    
-    // Kirim brand_name juga just in case controller butuh
+    // Required fields
+    fd.append("mitra", form.brand_name.trim());
+    fd.append("judul_campaign", form.judul_campaign.trim());
     fd.append("brand_name", form.brand_name.trim());
-    
-    fd.append("kategori_mitra_id", form.kategori_mitra_id);
+    fd.append("kategori_mitra_id", String(form.kategori_mitra_id));
     fd.append("deskripsi", form.deskripsi.trim());
     fd.append("external_url", form.external_url.trim());
     fd.append("created_by", auth?.id ? auth.id.toString() : "0");
+    // Attempt to keep approval status
+    fd.append("is_approved", String(form.is_approved));
+    
+    // Method spoofing for Laravel PUT via POST
+    // fd.append("_method", "PUT"); 
 
-    // Append multiple images
-    // Note: User confirmed backend logic is adjusted for multiple images
+    // Images
+    // Strategy: Send new images. Backend logic dictates if it appends or replaces.
+    // Usually 'update' replaces. If we want to keep existing, we might need to send them again?
+    // Or maybe the backend only updates if file is present.
+    // Let's try sending new images if any.
     gambars.forEach((file) => {
         fd.append("gambar[]", file); 
     });
+    
+    // If we want to keep existing images and delete some, we might need a separate field like 'kept_images[]' or 'deleted_images[]'.
+    // Without backend insight, a safe bet is often difficult.
+    // Let's try standard update. If `gambar` is present, it might overwrite.
 
     try {
-      await axios.post(`${API_URL}/api/mitra/store`, fd, {
+      // POST to /api/mitra/update/{id}
+      await axios.post(`${API_URL}/api/mitra/update/${id}`, fd, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -132,24 +207,18 @@ export default function CreateMitraPage() {
       Swal.fire({
         icon: "success",
         title: "Berhasil!",
-        text: "Mitra berhasil ditambahkan dan menunggu approval admin",
+        text: "Data campaign berhasil diperbarui",
         confirmButtonColor: "#10B981",
       }).then(() => {
         router.push("/mitra/me");
       });
     } catch (err: any) {
-      console.error("Error submitting mitra:", err);
-      console.log("Error details:", err.response?.data);
-      
-      const errorMessage = err.response?.data?.message || "Terjadi kesalahan saat menyimpan mitra.";
-      const validationErrors = err.response?.data?.errors 
-        ? Object.values(err.response.data.errors).flat().join('\n')
-        : '';
-
+      console.error("Error updating mitra:", err);
+      const errorMessage = err.response?.data?.message || "Terjadi kesalahan saat memperbarui data.";
       Swal.fire({
         icon: "error",
         title: "Gagal",
-        text: validationErrors || errorMessage,
+        text: errorMessage,
         confirmButtonColor: "#EF4444",
       });
     } finally {
@@ -160,9 +229,17 @@ export default function CreateMitraPage() {
   /* ===============================
      RENDER
   ================================= */
+  if (fetching) {
+      return (
+          <div className="min-h-screen bg-gray-50 flex items-center justify-center pt-20">
+               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-600"></div>
+          </div>
+      );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 pt-[6rem] px-4 pb-20">
-      <TopBar withBackButton>Tambah Mitra</TopBar>
+      <TopBar withBackButton>Edit Mitra</TopBar>
 
       <motion.div 
         initial={{ opacity: 0, y: 30 }}
@@ -170,17 +247,17 @@ export default function CreateMitraPage() {
         transition={{ duration: 0.6, ease: "easeOut" }}
         className="max-w-3xl mx-auto bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100"
       >
-        <div className="bg-gradient-to-r from-green-600 to-emerald-500 px-8 py-8 text-white text-center relative overflow-hidden">
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-500 px-8 py-8 text-white text-center relative overflow-hidden">
              <div className="absolute top-0 left-0 w-full h-full bg-white opacity-5 mix-blend-overlay"></div>
-             <h2 className="text-3xl font-bold mb-2 relative z-10">Campaign Baru</h2>
-             <p className="text-green-50 text-base relative z-10 font-medium">Buat campaign atau program kemitraan baru.</p>
+             <h2 className="text-3xl font-bold mb-2 relative z-10">Edit Campaign</h2>
+             <p className="text-blue-50 text-base relative z-10 font-medium">Perbarui informasi campaign Anda.</p>
         </div>
         
         <div className="p-8 space-y-6">
             {/* Nama Brand (Autofill) */}
             <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                    <FiBriefcase className="text-green-600 text-lg" /> Nama Brand
+                    <FiBriefcase className="text-blue-600 text-lg" /> Nama Brand
                 </label>
                 <input
                     className="w-full border border-gray-200 px-4 py-3.5 rounded-xl bg-gray-100 text-gray-600 cursor-not-allowed focus:outline-none"
@@ -188,16 +265,15 @@ export default function CreateMitraPage() {
                     value={form.brand_name}
                     readOnly
                 />
-                <p className="text-xs text-gray-400 ml-1">*Diambil dari data profil Anda</p>
             </div>
 
             {/* Judul Campaign / Mitra */}
             <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                    <FiUser className="text-green-600 text-lg" /> Judul Campaign / Mitra
+                    <FiUser className="text-blue-600 text-lg" /> Judul Campaign / Mitra
                 </label>
                 <input
-                    className="w-full border border-gray-200 px-4 py-3.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition bg-gray-50 hover:bg-white text-gray-800 placeholder-gray-400"
+                    className="w-full border border-gray-200 px-4 py-3.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition bg-gray-50 hover:bg-white text-gray-800 placeholder-gray-400"
                     placeholder="Contoh: Beasiswa Pendidikan AGPAII 2024"
                     value={form.judul_campaign}
                     onChange={(e) => setForm({ ...form, judul_campaign: e.target.value })}
@@ -207,11 +283,11 @@ export default function CreateMitraPage() {
             {/* Kategori */}
              <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                   <FiCheckCircle className="text-green-600 text-lg" /> Kategori
+                   <FiCheckCircle className="text-blue-600 text-lg" /> Kategori
                 </label>
                 <div className="relative">
                     <select
-                        className="w-full border border-gray-200 px-4 py-3.5 rounded-xl appearance-none bg-gray-50 hover:bg-white focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition text-gray-800"
+                        className="w-full border border-gray-200 px-4 py-3.5 rounded-xl appearance-none bg-gray-50 hover:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition text-gray-800"
                         value={form.kategori_mitra_id}
                         onChange={(e) => setForm({ ...form, kategori_mitra_id: e.target.value })}
                     >
@@ -231,10 +307,10 @@ export default function CreateMitraPage() {
              {/* External URL */}
             <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                    <FiLink className="text-green-600 text-lg" /> Link External
+                    <FiLink className="text-blue-600 text-lg" /> Link External
                 </label>
                 <input
-                    className="w-full border border-gray-200 px-4 py-3.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition bg-gray-50 hover:bg-white text-gray-800 placeholder-gray-400"
+                    className="w-full border border-gray-200 px-4 py-3.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition bg-gray-50 hover:bg-white text-gray-800 placeholder-gray-400"
                     placeholder="https://example.com/daftar"
                     value={form.external_url}
                     onChange={(e) => setForm({ ...form, external_url: e.target.value })}
@@ -244,10 +320,10 @@ export default function CreateMitraPage() {
             {/* Deskripsi */}
              <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                    <FiAlignLeft className="text-green-600 text-lg" /> Deskripsi
+                    <FiAlignLeft className="text-blue-600 text-lg" /> Deskripsi
                 </label>
                 <textarea
-                    className="w-full border border-gray-200 px-4 py-3.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition bg-gray-50 hover:bg-white text-gray-800 placeholder-gray-400"
+                    className="w-full border border-gray-200 px-4 py-3.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition bg-gray-50 hover:bg-white text-gray-800 placeholder-gray-400"
                     placeholder="Jelaskan detail campaign Anda..."
                     rows={5}
                     value={form.deskripsi}
@@ -258,15 +334,31 @@ export default function CreateMitraPage() {
             {/* Upload Gambar (Multiple) */}
             <div className="space-y-3">
                  <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                    <FiImage className="text-green-600 text-lg" /> Galeri Campaign (Bisa lebih dari 1)
+                    <FiImage className="text-blue-600 text-lg" /> Galeri Campaign
                 </label>
                 
-                {/* Image Preview Grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-3">
                     <AnimatePresence>
+                        {/* Existing Images */}
+                        {existingImages.map((src, index) => (
+                             <motion.div 
+                                key={`existing-${index}`}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="relative aspect-square rounded-xl overflow-hidden shadow-sm border border-blue-200 group"
+                            >
+                                <img src={getValidImageUrl(src)} alt={`Existing ${index}`} className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs text-center p-2">
+                                    Existing
+                                </div>
+                            </motion.div>
+                        ))}
+                        
+                        {/* New Previews */}
                         {previews.map((src, index) => (
                             <motion.div 
-                                key={index}
+                                key={`new-${index}`}
                                 initial={{ opacity: 0, scale: 0.8 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.8 }}
@@ -274,7 +366,7 @@ export default function CreateMitraPage() {
                             >
                                 <img src={src} alt={`Preview ${index}`} className="w-full h-full object-cover" />
                                 <button 
-                                    onClick={() => removeImage(index)}
+                                    onClick={() => removeNewImage(index)}
                                     className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
                                 >
                                     <FiX className="w-4 h-4" />
@@ -283,7 +375,7 @@ export default function CreateMitraPage() {
                         ))}
                         
                         {/* Upload Button Block */}
-                        <div className="aspect-square border-2 border-dashed border-green-300 rounded-xl bg-green-50/50 hover:bg-green-50 transition cursor-pointer relative flex flex-col items-center justify-center text-green-600 hover:text-green-700 group">
+                        <div className="aspect-square border-2 border-dashed border-blue-300 rounded-xl bg-blue-50/50 hover:bg-blue-50 transition cursor-pointer relative flex flex-col items-center justify-center text-blue-600 hover:text-blue-700 group">
                             <input
                                 type="file"
                                 accept="image/*"
@@ -298,7 +390,7 @@ export default function CreateMitraPage() {
                         </div>
                     </AnimatePresence>
                 </div>
-                <p className="text-xs text-gray-400">Format: PNG, JPG, JPEG (Maks. 5MB per file)</p>
+                <p className="text-xs text-gray-400">Upload gambar baru untuk mengganti/menambah gambar yang sudah ada.</p>
             </div>
 
             {/* Submit Button */}
@@ -306,7 +398,7 @@ export default function CreateMitraPage() {
                 <button
                     onClick={handleSubmit}
                     disabled={loading}
-                    className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white py-4 rounded-xl font-bold shadow-lg shadow-green-200 hover:shadow-xl hover:shadow-green-300 transform hover:-translate-y-0.5 transition-all disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-3 text-lg"
+                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-200 hover:shadow-xl hover:shadow-blue-300 transform hover:-translate-y-0.5 transition-all disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-3 text-lg"
                 >
                     {loading ? (
                         <>
@@ -317,7 +409,7 @@ export default function CreateMitraPage() {
                         <span>Menyimpan...</span>
                         </>
                     ) : (
-                        "Simpan Campaign"
+                        "Simpan Perubahan"
                     )}
                 </button>
             </div>

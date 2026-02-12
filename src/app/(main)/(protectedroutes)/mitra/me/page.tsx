@@ -4,8 +4,9 @@ import TopBar from "@/components/nav/topbar";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import Swal from "sweetalert2";
 import { motion } from "framer-motion";
-import { FiExternalLink, FiArrowRight, FiInfo, FiCheckCircle } from "react-icons/fi";
+import { FiExternalLink, FiArrowRight, FiInfo, FiCheckCircle, FiEdit, FiTrash, FiXCircle } from "react-icons/fi";
 import { useAuth } from "@/utils/context/auth_context";
 
 /* ===============================
@@ -24,7 +25,7 @@ interface MitraItem {
 	};
     isRegistered?: boolean;
     isOwner?: boolean;
-    is_approved?: number; // 0 or 1
+    is_approved?: number | string; // 0, 1, or 2
     approved_at?: string | null;
 }
 
@@ -128,6 +129,42 @@ const MyMitraPage: React.FC = () => {
         show: { opacity: 1, y: 0 }
     };
 
+    const handleDelete = async (e: React.MouseEvent, id: number) => {
+        e.stopPropagation();
+        
+        const result = await Swal.fire({
+            title: 'Apakah Anda yakin?',
+            text: "Campaign yang dihapus tidak dapat dikembalikan!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Ya, Hapus!',
+            cancelButtonText: 'Batal'
+        });
+
+        if (result.isConfirmed) {
+            try {
+                // DELETE method as per user route
+                await axios.delete(`${API_URL}/api/mitra/delete/${id}`);
+                
+                setMyMitraList(prev => prev.filter(item => item.id !== id));
+                Swal.fire(
+                    'Terhapus!',
+                    'Campaign berhasil dihapus.',
+                    'success'
+                );
+            } catch (error) {
+                console.error("Gagal menghapus mitra:", error);
+                Swal.fire(
+                    'Gagal!',
+                    'Terjadi kesalahan saat menghapus data.',
+                    'error'
+                );
+            }
+        }
+    };
+
 	return (
 		<div className="pt-[4.21rem] bg-gray-50 min-h-screen pb-20">
 			<TopBar 
@@ -200,17 +237,24 @@ const MyMitraPage: React.FC = () => {
                                     <div className="absolute top-3 right-3 flex flex-col gap-1 items-end z-20">
 
                                         
-                                        {item.isOwner && item.is_approved === 0 && (
+                                        {item.isOwner && Number(item.is_approved) === 0 && (
                                             <div className="bg-yellow-500/90 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1">
                                                 <span>⏳</span>
                                                 Menunggu Verifikasi
                                             </div>
                                         )}
                                         
-                                        {item.isOwner && item.is_approved === 1 && (
+                                        {item.isOwner && Number(item.is_approved) === 1 && (
                                             <div className="bg-green-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1">
                                                 <FiCheckCircle className="w-3 h-3" />
                                                 Disetujui
+                                            </div>
+                                        )}
+                                        
+                                         {item.isOwner && Number(item.is_approved) === 2 && (
+                                            <div className="bg-red-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1">
+                                                <FiXCircle className="w-3 h-3" />
+                                                Ditolak
                                             </div>
                                         )}
 
@@ -228,12 +272,35 @@ const MyMitraPage: React.FC = () => {
                                     <div className="absolute -top-5 right-4 bg-green-500 text-white p-2.5 rounded-full shadow-lg group-hover:scale-110 group-hover:bg-green-600 transition-all duration-300 z-10 flex items-center justify-center">
                                         <FiArrowRight className="w-4 h-4" />
                                     </div>
-                                    <h3 className="font-bold text-gray-800 text-lg leading-tight line-clamp-1 group-hover:text-green-600 transition-colors">
+                                    <h3 className="font-bold text-gray-800 text-lg pb-4 truncate group-hover:text-green-600 transition-colors">
     									{item.judul_campaign || item.mitra}
     								</h3>
                                     <div className="flex items-center gap-1 text-xs text-gray-400 mt-1 font-medium">
                                         <span>Lihat Detail</span>
                                     </div>
+                                    
+                                    {/* Action Buttons for Owner */}
+                                    {item.isOwner && (
+                                        <div className="absolute bottom-2 right-4 flex gap-2">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    router.push(`/mitra/edit/${item.id}`);
+                                                }}
+                                                className="p-2 bg-blue-100 text-blue-600 rounded-full hover:bg-blue-200 transition shadow-sm"
+                                                title="Edit Campaign"
+                                            >
+                                                <FiEdit className="w-4 h-4" />
+                                            </button>
+                                            <button
+                                                onClick={(e) => handleDelete(e, item.id)}
+                                                className="p-2 bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition shadow-sm"
+                                                title="Hapus Campaign"
+                                            >
+                                                <FiTrash className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
 							</motion.div>
 						))}
