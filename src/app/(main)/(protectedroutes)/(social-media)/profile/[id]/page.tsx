@@ -17,7 +17,6 @@ import {
   MapPinIcon,
 } from "@heroicons/react/24/outline";
 import SocialMediaNavbar from "@/components/nav/social_media_nav";
-
 import UserAvatar from "@/components/ui/user-avatar";
 
 function trimText(text: string, length: number) {

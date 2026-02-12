@@ -1,7 +1,6 @@
 "use client";
 import clsx from "clsx";
 import Link from "next/link";
-import Image from "next/image";
 import { Autoplay, Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
@@ -56,9 +55,34 @@ export default function Home() {
   const { show: paymentModalShow, toggle: togglePaymentModal } = useModal();
   const { show: iframeModalShow, toggle: toggleIframeModal } = useModal();
   const { show: mobileOnlyShow, toggle: toggleMobileModal } = useModal();
-
+  const [isRamadhanFeatureEnabled, setIsRamadhanFeatureEnabled] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
-
+  useEffect(() => {
+    fetch(
+      `${process.env.NEXT_PUBLIC_MITRA_URL}/api/feature-status/ramadhan_feature`
+    )
+      .then((response) => {
+        if (!response.ok) {
+          // If API returns 404 or error, just disable the feature
+          setIsRamadhanFeatureEnabled(false);
+          setIsLoading(false);
+          return null;
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (data) {
+          setIsRamadhanFeatureEnabled(data.is_enabled);
+        }
+        setIsLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching feature status:", error);
+        setIsRamadhanFeatureEnabled(false);
+        setIsLoading(false);
+      });
+  }, []);
   const menus: { label: string; link: string; icon: string }[] = [
     {
       label: "Sosial Media",
@@ -178,7 +202,7 @@ export default function Home() {
       {/* Modal components */}
       <Modal show={modalShow && userStatus === Status.EXPIRED} onClose={toggleModal}>
         <div className="flex flex-col items-center text-sm text-center">
-          <Image src="/img/credit_card.svg" width={80} height={80} className="size-20 mt-6" alt="Credit Card" />
+          <img src="/img/credit_card.svg" className="size-20 mt-6" alt="" />
           <p className="text-slate-600 pt-3 mt-6">
             Saatnya iuran 6 bulan untuk tetap <br /> mendapatkan fasilitas AGPAII Digital.
           </p>
@@ -203,7 +227,7 @@ export default function Home() {
       </Modal>
       <Modal show={modalShow && userStatus === Status.PENDING} onClose={toggleModal}>
         <div className="flex flex-col items-center text-sm text-center ">
-          <Image src="/img/profile.svg" width={128} height={128} className="size-32 mt-8" alt="Profile" />
+          <img src="/img/profile.svg" className="size-32 mt-8" alt="" />
           <p className="text-slate-600 text-left pt-3">
             Lengkapi Profil Anda untuk mendapatkan
             <span className="sm:hidden"> Nomor KTA</span>
@@ -242,7 +266,7 @@ export default function Home() {
         onClose={() => toggleModal()}
       >
         <div className="flex flex-col items-center text-sm text-center">
-          <Image src="/img/credit_card.svg" width={80} height={80} className="size-20 mt-8" alt="Credit Card" />
+          <img src="/img/credit_card.svg" className="size-20 mt-8" alt="" />
           <p className="text-slate-600 pt-3 mt-6 pb-3">
             Lakukan Iuran Pendaftaran untuk <br /> mengaktifkan akun
           </p>
@@ -267,7 +291,7 @@ export default function Home() {
           <div className="w-full text-left text-lg text-slate-700">
             <h1 className="font-semibold">Jadilah anggota AGPAII</h1>
           </div>
-          <Image src="/img/payment.svg" width={160} height={160} alt="Payment" className="size-40" />
+          <img src="/img/payment.svg" alt="" className="size-40" />
           <div className="flex flex-col gap-2 w-full items-start">
             <ul className="flex flex-col text-slate-600 list-disc text-left px-6">
               <li>Mendapatkan KTA Digital</li>
@@ -318,7 +342,7 @@ export default function Home() {
 
       <Modal show={mobileOnlyShow} onClose={toggleMobileModal}>
         <div className="flex flex-col items-center max-w-[16rem] mt-4">
-          <Image src="/svg/mobile.svg" width={144} height={144} className="size-36" alt="Mobile" />
+          <img src="/svg/mobile.svg" className="size-36" alt="" />
           <p className="mt-6 pb-3">
             Oops, Fitur ini hanya tersedia di aplikasi mobile
           </p>
@@ -330,22 +354,20 @@ export default function Home() {
       <div className="w-full max-w-[480px] mx-auto bg-white px-4 py-4">
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <Image src="/img/wave.png" width={32} height={32} alt="sapa" className="size-8 flex-shrink-0" />
+            <img src="/img/wave.png" alt="sapa" className="size-8 flex-shrink-0" />
             <div className="min-w-0 flex-1">
               <p className="text-xs sm:text-sm font-medium text-[#575757]">Assalamualaikum</p>
               <p className="text-sm sm:text-base font-bold text-[#006557] truncate">{auth.name}</p>
             </div>
           </div>
           <Link href={"/profile/edit"} className="rounded-full border-2 border-white flex-shrink-0 ml-2">
-            <Image
+            <img
               src={
                 (auth?.avatar !== null && getImage(auth.avatar)) ||
                 "/img/profileplacholder.png"
               }
-              width={40}
-              height={40}
               className="object-cover rounded-full size-10"
-              alt="Profile"
+              alt=""
             />
           </Link>
         </div>
@@ -357,7 +379,7 @@ export default function Home() {
           <div className="bg-[#01B671] rounded-2xl p-2.5 shadow-md">
             <div className="flex items-center gap-4">
               <div className="bg-[#01925B] rounded-2xl p-3 flex-shrink-0">
-                <Image src="/svg/iuran-aktif.svg" width={32} height={32} alt="Iuran Aktif" className="w-8 h-8" />
+                <img src="/svg/iuran-aktif.svg" alt="Iuran Aktif" className="w-8 h-8" />
               </div>
               <div className="flex-1">
                 <p className="text-white font-semibold text-base mb-1">AGPAII Jaya, Guru Sejahtera</p>
@@ -370,7 +392,7 @@ export default function Home() {
           <div className="bg-[#E5553A] rounded-2xl p-2.5 shadow-md">
             <div className="flex items-center gap-4">
               <div className="bg-[#B8432E] rounded-2xl p-3 flex-shrink-0">
-                <Image src="/svg/stop.svg" width={32} height={32} alt="Tidak Aktif" className="w-8 h-8" />
+                <img src="/svg/stop.svg" alt="Tidak Aktif" className="w-8 h-8" />
               </div>
               <div className="flex-1">
                 <p className="text-white font-semibold text-base mb-1">Akses Anda Ditolak</p>
@@ -390,7 +412,7 @@ export default function Home() {
           <div className="bg-[#FF8E0C] rounded-2xl p-2.5 shadow-md">
             <div className="flex items-center gap-4">
               <div className="bg-[#CC760C] rounded-2xl p-3 flex-shrink-0">
-                <Image src="/svg/warning.svg" width={32} height={32} alt="Expired" className="w-8 h-8" />
+                <img src="/svg/warning.svg" alt="Expired" className="w-8 h-8" />
               </div>
               <div className="flex-1">
                 <p className="text-white font-semibold text-base mb-1">Iuran Hampir Habis</p>
@@ -449,7 +471,7 @@ export default function Home() {
               className="flex flex-col items-center gap-2 group"
             >
               <div className="bg-slate-100 rounded-2xl p-2.5 sm:p-3 group-hover:bg-slate-200 transition w-full aspect-square flex items-center justify-center max-w-[80px]">
-                <Image src={menu.icon} width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 object-contain" alt={menu.label} />
+                <img src={menu.icon} className="w-8 h-8 sm:w-10 sm:h-10 object-contain" alt="" />
               </div>
               <p className="text-[10px] sm:text-xs text-center text-slate-600 line-clamp-2 w-full px-1">
                 {menu.label}
@@ -471,14 +493,11 @@ export default function Home() {
             {banners.map((banner: any, i: number) => (
               <SwiperSlide key={i} className="flex justify-center">
                 <Link href={"/banner/" + banner.id} className="w-full">
-                  <div className="relative w-full h-32 sm:h-40 rounded-lg overflow-hidden"> 
-                    <Image
-                      src={getImage(banner.url)}
-                      fill
-                      className="object-cover"
-                      alt="Banner"
-                    />
-                  </div>
+                  <img
+                    src={getImage(banner.url)}
+                    className="w-full object-cover rounded-lg h-32 sm:h-40"
+                    alt=""
+                  />
                 </Link>
               </SwiperSlide>
             ))}
@@ -512,14 +531,12 @@ export default function Home() {
               >
                 <div className="p-3 sm:p-4 bg-white shadow-sm rounded-lg min-h-[280px] sm:min-h-[320px] max-h-[280px] sm:max-h-[320px] flex flex-col">
                   <div className="flex items-center gap-3">
-                    <Image
+                    <img
                       src={
                         (post.author?.avatar && getImage(post.author.avatar)) ||
                         "/img/profileplacholder.png"
                       }
-                      width={40}
-                      height={40}
-                      alt={post.author?.name || "User"}
+                      alt={post.author?.name}
                       className="w-10 h-10 rounded-full object-cover flex-shrink-0"
                     />
                     <div className="min-w-0 flex-1">
@@ -538,14 +555,11 @@ export default function Home() {
                     </p>
                   </div>
                   {post.images?.length > 0 && (
-                    <div className="relative w-full min-h-[130px] max-h-[130px] sm:min-h-[150px] sm:max-h-[150px] mt-2 rounded-lg overflow-hidden">
-                      <Image
-                        src={getImage(post.images[0].src)}
-                        alt="post"
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
+                    <img
+                      src={getImage(post.images[0].src)}
+                      alt="post"
+                      className="w-full min-h-[130px] max-h-[130px] sm:min-h-[150px] sm:max-h-[150px] rounded-lg object-cover mt-2"
+                    />
                   )}
                 </div>
               </SwiperSlide>
@@ -576,11 +590,10 @@ export default function Home() {
                   className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition group"
                 >
                   <div className="relative h-24 sm:h-32 overflow-hidden bg-slate-200">
-                    <Image
+                    <img
                       src={article.yoast_head_json?.og_image?.[0]?.url || "/img/article.png"}
                       alt={article.title.rendered}
-                      fill
-                      className="object-cover group-hover:scale-105 transition"
+                      className="w-full h-full object-cover group-hover:scale-105 transition"
                     />
                   </div>
                   <div className="p-2 sm:p-3">

@@ -19,8 +19,6 @@ export const isInformationProfileCompleted = (user: any) => {
 		"nip",
 		"nik",
 		"contact",
-		"school_place",
-		"educational_level_id",
 		"unit_kerja",
 		"gender",
 		"birthdate",

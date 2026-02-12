@@ -90,8 +90,6 @@ export default function WatchLivePage() {
 
   const viewerCount = live?.viewers?.length || 0;
 
-
-
   if (!live) {
     return (
       <div className="flex items-center justify-center h-screen bg-black text-white">

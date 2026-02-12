@@ -182,7 +182,7 @@ const ChatScreen: React.FC = () => {
 				</div>
 			</div>
 		);
-	}
+	};
 
 	return (
 		<div className="pt-[3.9rem] bg-slate-100 min-h-screen">

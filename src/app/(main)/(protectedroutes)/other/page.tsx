@@ -26,6 +26,7 @@ export default function OthersMenuPage() {
 				{ label: "KTA Digital", icon: "/svg/ikon-kta.svg", link: "/kta" },
 				{ label: "Live", icon: "/svg/ikon-live.svg", link: "/live" },
 				{ label: "Sosial Media", icon: "/svg/ikon-sosmed.svg", link: "/social-media" },
+                { label: "Data Iuran", icon: "/svg/iuran.svg", link: "/iuran" },
 			],
 		},
 		{
@@ -83,7 +84,6 @@ export default function OthersMenuPage() {
 		setShowLogoutModal(false);
 		logout();
 	};
-
 
 
 	return (

@@ -14,7 +14,7 @@ export default function LoginPage() {
   interface iFormField {
     loginType: "email" | "nik";
     email: string;
-    password?: string; 
+    password?: string;
   }
   const { register, handleSubmit, setValue, watch } = useForm<iFormField>({
     defaultValues: {
@@ -26,8 +26,6 @@ export default function LoginPage() {
   const [loginType, setLoginType] = useState<"email" | "nik">("email");
   const { mutate: submit, isPending: loading } = useMutation({
     mutationFn: async (data: iFormField) => {
-
-
       try {
         let payload;
         if (data.loginType === "email") {
@@ -76,9 +74,7 @@ export default function LoginPage() {
 
       // arahkan berdasarkan role
       if (roleId === 8) {
-        router.replace("/beranda"); // 🎓 SISWA
-      } else if (roleId === 14) {
-        router.replace("/mitra"); // 🏢 MITRA (ID 14)
+        router.replace("/beranda"); // 🎓 SISWA - gunakan replace agar tidak bisa back
       } else {
         router.replace("/"); // 👤 ROLE LAIN
       }
@@ -98,7 +94,7 @@ export default function LoginPage() {
       <div className="flex flex-col sm:px-2 mb-16 px-1 items-center text-center">
         <img src="/svg/agpaii2.svg" className="size-20" alt="agpaii-logo" />
         <p className="font-semibold capitalize text-3xl text-[#009788] sm:text-4xl -mt-2">
-          Login
+          Loginsss
         </p>
         <p className="text-slate-500 mt-2">
           Silahkan login menggunakan akun anda
