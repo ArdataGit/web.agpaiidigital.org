@@ -127,7 +127,7 @@ const MitraDetailContent: React.FC<MitraDetailContentProps> = ({
                 </span>
               )}
             </div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 leading-tight break-words break-all">
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 leading-tight">
               {subtitle}
             </h1>
           </div>
