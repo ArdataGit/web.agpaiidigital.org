@@ -23,23 +23,34 @@ const MitraDetailPage: React.FC = () => {
 	const STORAGE_URL = process.env.NEXT_PUBLIC_MITRA_URL || "";
 
 	// Fetch Mitra Details
-	useEffect(() => {
-		if (!id) return;
+      useEffect(() => {
+      if (!id) return;
 
-		const fetchMitraData = async () => {
-			try {
-				const response = await axios.get(`${API_URL}/api/mitra/getdata/${id}`);
-				setSubtitle(response.data.mitra);
-				setDescription(response.data.deskripsi);
-				setImageUrl(`${STORAGE_URL}/public/${response.data.gambar}`);
-				setExternalUrl(response.data.external_url);
-			} catch (error) {
-				console.error("Error fetching mitra data:", error);
-			}
-		};
+      const fetchMitraData = async () => {
+          try {
+              const response = await axios.get(
+                  `https://admin.agpaiidigital.org/api/mitra/getdata/${id}`
+              );
 
-		fetchMitraData();
-	}, [id, API_URL, STORAGE_URL]);
+              setSubtitle(response.data.mitra);
+              setDescription(response.data.deskripsi);
+
+              // ✅ gambar tetap ke file.agpaiidigital.org
+              setImageUrl(
+                  response.data.gambar
+                      ? `https://file.agpaiidigital.org/${response.data.gambar}`
+                      : ""
+              );
+
+              setExternalUrl(response.data.external_url);
+          } catch (error) {
+              console.error("Error fetching mitra data:", error);
+          }
+      };
+
+      fetchMitraData();
+  }, [id]);
+
 
 	// Check Confirmation Status
 	useEffect(() => {
@@ -48,7 +59,7 @@ const MitraDetailPage: React.FC = () => {
 		const checkConfirmationStatus = async () => {
 			try {
 				const response = await axios.get(
-					`${process.env.NEXT_PUBLIC_API_BASE_URL2}/api/mitra/checklistdata?user_id=${auth.id}&mitra_id=${id}`,
+					`${process.env.NEXT_PUBLIC_API_BASE_URL}/mitra/checklistdata?user_id=${auth.id}&mitra_id=${id}`,
 				);
 				setIsConfirmed(response.data > 0);
 			} catch (error) {

@@ -1,149 +1,158 @@
 "use client";
+
 import TopBar from "@/components/nav/topbar";
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import { useRouter } from "next/navigation";
+import axios from "axios";
 
-interface KategoriMitraOption {
-	id: string;
-	kategori_mitra: string;
-}
-
-interface SubProgramOption {
-	id: string;
+/* ===============================
+   INTERFACE
+================================ */
+interface MitraItem {
+	id: number;
 	mitra: string;
+	deskripsi: string;
+	external_url: string;
+	gambar: string | null;
+	kategori: {
+		id: number | null;
+		nama: string | null;
+	};
 }
 
 const MitraPage: React.FC = () => {
 	const router = useRouter();
-	const [kategoriMitra, setKategoriMitra] = useState<string>("");
-	const [kategoriMitraOptions, setKategoriMitraOptions] = useState<
-		KategoriMitraOption[]
-	>([]);
-	const [subProgram, setSubProgram] = useState<string>("");
-	const [subProgramOptions, setSubProgramOptions] = useState<
-		SubProgramOption[]
-	>([]);
-	const [isLoading, setIsLoading] = useState<boolean>(false);
+	const API_URL = "https://admin.agpaiidigital.org";
 
-	const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL2 || "";
+	const [mitraList, setMitraList] = useState<MitraItem[]>([]);
+	const [loading, setLoading] = useState<boolean>(false);
 
+	/* ===============================
+	   FETCH ALL MITRA (NO FILTER)
+	================================ */
 	useEffect(() => {
-		const fetchKategoriMitra = async () => {
+		const fetchMitra = async () => {
+			setLoading(true);
 			try {
-				const response = await axios.get<{
-					kategori_mitra: KategoriMitraOption[];
+				const res = await axios.get<{
+					success: boolean;
+					data: MitraItem[];
 				}>(`${API_URL}/api/mitra`);
-				setKategoriMitraOptions(response.data.kategori_mitra);
+
+				setMitraList(res.data.data || []);
 			} catch (error) {
-				console.error("Error fetching kategori mitra:", error);
+				console.error("Gagal mengambil data mitra:", error);
+			} finally {
+				setLoading(false);
 			}
 		};
 
-		fetchKategoriMitra();
-	}, [API_URL]);
+		fetchMitra();
+	}, []);
 
-	useEffect(() => {
-		if (kategoriMitra) {
-			const fetchSubProgram = async () => {
-				try {
-					const response = await axios.get<{ mitra: SubProgramOption[] }>(
-						`${API_URL}/api/mitra?kategori_mitra=${kategoriMitra}`,
-					);
-					setSubProgramOptions(response.data.mitra);
-				} catch (error) {
-					console.error("Error fetching sub program:", error);
-				}
-			};
-
-			fetchSubProgram();
-		} else {
-			setSubProgramOptions([]);
-		}
-	}, [kategoriMitra, API_URL]);
-
-	const handleNavigate = () => {
-		const selectedMitra = subProgramOptions.find(
-			(opt) => opt.id === subProgram,
-		);
-		router.push(`/mitra/${subProgram}`);
-		// Navigate logic here, for example:
-		// router.push(`/program?mitraId=${subProgram}&title=${selectedMitra?.mitra}`);
-	};
-
+	/* ===============================
+	   RENDER
+	================================ */
 	return (
 		<div className="pt-[4.21rem] bg-white min-h-screen">
 			<TopBar withBackButton>MITRA AGPAII</TopBar>
+
 			<div className="p-6">
+				{/* HEADER IMAGE */}
 				<div className="mb-6">
 					<img
 						src="/img/partner-profile.png"
 						alt="Mitra AGPAII"
-						className="w-full h-[250px] object-cover rounded"
+						className="w-full h-[220px] object-cover rounded-lg"
 					/>
 				</div>
 
+				{/* DESKRIPSI */}
 				<p className="text-gray-600 text-sm mb-8">
 					Mitra AGPAII adalah mitra strategis bagi para pendidik Pendidikan
-					Agama Islam (PAI) di seluruh Indonesia. Kami hadir untuk mendukung
-					guru dalam mencetak generasi berakhlak mulia, berwawasan luas, dan
-					siap menghadapi tantangan zaman. Dengan semangat kebersamaan, kami
-					percaya bahwa pendidikan adalah kunci untuk masa depan bangsa yang
-					lebih baik. 🌟
+					Agama Islam (PAI) di seluruh Indonesia. Kami bekerja sama dengan
+					berbagai pihak untuk menghadirkan program, layanan, dan solusi
+					yang mendukung peningkatan kualitas pendidikan PAI secara
+					berkelanjutan.
 				</p>
+              
+              
+                {/* TOMBOL TAMBAH MITRA */}
+                <div className="flex justify-end mb-6">
+                  <button
+                    onClick={() => router.push("/mitra/new")}
+                    className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg shadow-md transition transform hover:scale-105 active:scale-95"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 4v16m8-8H4"
+                      />
+                    </svg>
+                    Tambah Mitra
+                  </button>
+                </div>
 
-				<div className="mb-6">
-					<label
-						htmlFor="kategoriMitra"
-						className="block text-sm font-bold mb-2">
-						Kategori Mitra
-					</label>
-					<select
-						id="kategoriMitra"
-						value={kategoriMitra}
-						onChange={(e) => setKategoriMitra(e.target.value)}
-						className="w-full border border-green-500 rounded px-4 py-2">
-						<option value="">Pilih Kategori Mitra</option>
-						{kategoriMitraOptions.map((opt) => (
-							<option
-								key={opt.id}
-								value={opt.id}>
-								{opt.kategori_mitra}
-							</option>
+
+				{/* LOADING */}
+				{loading && (
+					<div className="text-center py-10 text-gray-500">
+						Memuat data mitra...
+					</div>
+				)}
+
+				{/* LIST MITRA */}
+				{!loading && mitraList.length === 0 && (
+					<div className="text-center py-10 text-gray-500">
+						Data mitra belum tersedia
+					</div>
+				)}
+
+				{!loading && mitraList.length > 0 && (
+					<div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+						{mitraList.map((item) => (
+							<div
+								key={item.id}
+								onClick={() => router.push(`/mitra/${item.id}`)}
+								className="border rounded-xl p-4 hover:shadow-md transition cursor-pointer"
+							>
+								{/* GAMBAR */}
+								{item.gambar && (
+									<img
+										src={item.gambar}
+										alt={item.mitra}
+										className="w-full h-[140px] object-cover rounded mb-4"
+									/>
+								)}
+
+								{/* TITLE */}
+								<h3 className="font-semibold text-gray-900 mb-1">
+									{item.mitra}
+								</h3>
+
+								{/* KATEGORI (INFO SAJA, BUKAN FILTER) */}
+								{item.kategori?.nama && (
+									<p className="text-xs text-green-600 mb-2">
+										{item.kategori.nama}
+									</p>
+								)}
+
+								{/* DESKRIPSI */}
+								<p className="text-sm text-gray-600 line-clamp-3">
+									{item.deskripsi}
+								</p>
+							</div>
 						))}
-					</select>
-				</div>
-
-				<div className="mb-6">
-					<label
-						htmlFor="subProgram"
-						className="block text-sm font-bold mb-2">
-						Mitra
-					</label>
-					<select
-						id="subProgram"
-						value={subProgram}
-						onChange={(e) => setSubProgram(e.target.value)}
-						className="w-full border border-green-500 rounded px-4 py-2">
-						<option value="">Pilih Mitra</option>
-						{subProgramOptions.map((opt) => (
-							<option
-								key={opt.id}
-								value={opt.id}>
-								{opt.mitra}
-							</option>
-						))}
-					</select>
-				</div>
-
-				<button
-					onClick={handleNavigate}
-					className={`w-full bg-green-500 text-white font-bold py-2 px-4 rounded ${
-						isLoading ? "opacity-50 cursor-not-allowed" : ""
-					}`}
-					disabled={isLoading}>
-					{isLoading ? "Harap Tunggu..." : "Selanjutnya"}
-				</button>
+					</div>
+				)}
 			</div>
 		</div>
 	);

@@ -1,5 +1,4 @@
 "use client";
-
 import Swal from "sweetalert2";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/utils/context/auth_context";
@@ -11,54 +10,46 @@ export default function PlnTokenForm() {
 
   const [meter, setMeter] = useState("");
   const [phone, setPhone] = useState("");
-
   const [options, setOptions] = useState<
     { id: string; name: string; price: number }[]
   >([]);
-
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
   const [selectedPrice, setSelectedPrice] = useState<number>(0);
 
   const [voucherCode, setVoucherCode] = useState("");
   const [voucherError, setVoucherError] = useState<string | null>(null);
+  const [voucherSuccess, setVoucherSuccess] = useState<string | null>(null); // pesan sukses + potongan
+
   const [originalPrice, setOriginalPrice] = useState<number | null>(null);
   const [finalPrice, setFinalPrice] = useState<number | null>(null);
 
   const [saldo, setSaldo] = useState<number>(0);
-
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   /* ================= SALDO ================= */
-    useEffect(() => {
-          if (!auth?.id) return;
+  useEffect(() => {
+    if (!auth?.id) return;
 
-          const fetchSaldo = async () => {
-            try {
-              const res = await fetch(
-                `https://admin.agpaiidigital.org/api/agpay/wallet?user_id=${auth.id}`
-              );
-              const data = await res.json();
+    const fetchSaldo = async () => {
+      try {
+        const res = await fetch(
+          `https://admin.agpaiidigital.org/api/agpay/wallet?user_id=${auth.id}`
+        );
+        const data = await res.json();
+        const rawBalance = data?.balance ?? data?.data?.balance ?? 0;
+        setSaldo(Number(rawBalance));
+      } catch {
+        setSaldo(0);
+      }
+    };
+    fetchSaldo();
+  }, [auth?.id]);
 
-              const rawBalance =
-                data?.balance ??
-                data?.data?.balance ??
-                0;
-
-              setSaldo(Number(rawBalance));
-            } catch {
-              setSaldo(0);
-            }
-          };
-
-          fetchSaldo();
-        }, [auth?.id]);
-
-    const formatRupiah = (value: number) =>
-      `Rp ${value.toLocaleString("id-ID")}`;
+  const formatRupiah = (value: number) =>
+    `Rp ${value.toLocaleString("id-ID")}`;
 
   /* ================= TOKEN OPTIONS ================= */
   const fetchTokenOptions = async () => {
@@ -70,9 +61,7 @@ export default function PlnTokenForm() {
         `https://admin.agpaiidigital.org/api/filter-products?category_id=19`
       );
       const data = await res.json();
-
       if (!res.ok || !data.results) throw new Error("Gagal memuat token PLN");
-
       setOptions(
         data.results.map((item: any) => ({
           id: item.code,
@@ -93,9 +82,17 @@ export default function PlnTokenForm() {
 
   /* ================= VOUCHER ================= */
   const validateVoucher = async () => {
-    if (!voucherCode || !selectedCode) return;
+    if (!voucherCode.trim() || !selectedCode) {
+      setVoucherError("Masukkan kode voucher dan pilih nominal terlebih dahulu");
+      return;
+    }
 
     setLoading(true);
+    setVoucherError(null);
+    setVoucherSuccess(null);
+    setOriginalPrice(null);
+    setFinalPrice(null);
+
     try {
       const res = await fetch(
         "https://admin.agpaiidigital.org/api/tripay/ppob/validate-voucher",
@@ -106,17 +103,27 @@ export default function PlnTokenForm() {
             Authorization: `Bearer ${auth?.token || ""}`,
           },
           body: JSON.stringify({
-            voucher_code: voucherCode,
+            voucher_code: voucherCode.trim(),
             code: selectedCode,
           }),
         }
       );
 
       const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.message);
 
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Voucher tidak valid atau kadaluarsa");
+      }
+
+      // Sukses
+      const potongan = data.original_price - data.final_price;
       setOriginalPrice(data.original_price);
       setFinalPrice(data.final_price);
+      setVoucherSuccess(
+        potongan > 0
+          ? `Voucher berhasil! Potongan: ${formatRupiah(potongan)}`
+          : `Voucher diterapkan (tanpa potongan)`
+      );
     } catch (e: any) {
       setVoucherError(e.message || "Voucher tidak valid");
       setOriginalPrice(null);
@@ -132,63 +139,62 @@ export default function PlnTokenForm() {
 
   /* ================= SUBMIT ================= */
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+    e.preventDefault();
+    if (!meter || !phone || !selectedCode || total > saldo) return;
 
-  if (!meter || !phone || !selectedCode || total > saldo) return;
+    setLoading(true);
 
-  setLoading(true);
-  try {
-    const res = await fetch(
-      "https://admin.agpaiidigital.org/api/tripay/ppob/transaksi/pembelian",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${auth?.token || ""}`,
-        },
-        body: JSON.stringify({
-          user_id: auth.id,
-          inquiry: "PLN",
-          code: selectedCode,
-          phone,
-          no_meter_pln: meter,
-          voucher_code: voucherCode || undefined,
-        }),
+    try {
+      const res = await fetch(
+        "https://admin.agpaiidigital.org/api/tripay/ppob/transaksi/pembelian",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${auth?.token || ""}`,
+          },
+          body: JSON.stringify({
+            user_id: auth.id,
+            inquiry: "PLN",
+            code: selectedCode,
+            phone,
+            no_meter_pln: meter,
+            voucher_code: voucherCode.trim() || undefined,
+          }),
+        }
+      );
+
+      const data = await res.json();
+
+      if (!data.success) {
+        throw new Error(data.message || "Transaksi gagal");
       }
-    );
 
-    const data = await res.json();
+      // SUCCESS
+      await Swal.fire({
+        icon: "success",
+        title: "Transaksi Berhasil",
+        text: "Token PLN sedang diproses",
+        confirmButtonColor: "#009788",
+      });
 
-    if (!data.success) {
-      throw new Error(data.message || "Transaksi gagal");
+      window.location.href = "/history";
+    } catch (e: any) {
+      const message = e?.message || "Terjadi kesalahan";
+      const isSaldoError = message.toLowerCase().includes("saldo");
+
+      await Swal.fire({
+        icon: "error",
+        title: "Transaksi Gagal",
+        text: isSaldoError
+          ? "Ada Kendala di Provider, hubungi admin (404 SAL)"
+          : "Ada Kendala di Provider, hubungi admin (500 PRVDR)",
+        confirmButtonColor: "#d33",
+      });
+    } finally {
+      setLoading(false);
     }
-
-    // ✅ SUCCESS
-    await Swal.fire({
-      icon: "success",
-      title: "Transaksi Berhasil",
-      text: "Token PLN sedang diproses",
-      confirmButtonColor: "#009788",
-    });
-
-    window.location.href = "/history";
-  } catch (e: any) {
-    const message = e?.message || "Terjadi kesalahan";
-    const isSaldoError = message.toLowerCase().includes("saldo");
-
-    await Swal.fire({
-      icon: "error",
-      title: "Transaksi Gagal",
-      text: isSaldoError
-        ? "Ada Kendala di Provider, hubungi admin (404 SAL)"
-        : "Ada Kendala di Provider, hubungi admin (500 PRVDR)",
-      confirmButtonColor: "#d33",
-    });
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   /* ================= PAGINATION ================= */
   const totalPages = Math.ceil(options.length / itemsPerPage);
@@ -212,7 +218,8 @@ export default function PlnTokenForm() {
           <input
             value={meter}
             onChange={(e) => setMeter(e.target.value)}
-            className="w-full mt-2 px-4 py-3 border rounded-lg"
+            className="w-full mt-2 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#009788]"
+            placeholder="Contoh: 123456789012"
           />
         </div>
 
@@ -221,7 +228,8 @@ export default function PlnTokenForm() {
           <input
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            className="w-full mt-2 px-4 py-3 border rounded-lg"
+            className="w-full mt-2 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#009788]"
+            placeholder="Contoh: 081234567890"
           />
         </div>
 
@@ -234,37 +242,96 @@ export default function PlnTokenForm() {
                 onClick={() => {
                   setSelectedCode(item.id);
                   setSelectedPrice(item.price);
+                  // Reset voucher saat ganti nominal
+                  setVoucherCode("");
                   setVoucherError(null);
+                  setVoucherSuccess(null);
                   setOriginalPrice(null);
                   setFinalPrice(null);
                 }}
                 className={clsx(
-                  "cursor-pointer p-4 border rounded-xl text-center",
+                  "cursor-pointer p-4 border rounded-xl text-center transition-all",
                   selectedCode === item.id
-                    ? "border-[#009788] bg-[#009788]/10 font-semibold"
-                    : "border-slate-200"
+                    ? "border-[#009788] bg-[#009788]/10 font-semibold shadow-sm"
+                    : "border-slate-200 hover:border-[#009788]/50"
                 )}
               >
-                <p>{item.name}</p>
-                <p className="text-sm text-gray-500">
-                  Rp {item.price.toLocaleString("id-ID")}
+                <p className="font-medium">{item.name}</p>
+                <p className="text-sm text-gray-600">
+                  {formatRupiah(item.price)}
                 </p>
               </div>
             ))}
           </div>
+
+          {/* Pagination sederhana - bisa dipercantik */}
+          {totalPages > 1 && (
+            <div className="flex justify-center mt-4 gap-2">
+              <button
+                type="button"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                className="px-3 py-1 border rounded disabled:opacity-50"
+              >
+                Prev
+              </button>
+              <span className="px-3 py-1 self-center">
+                Hal {currentPage} / {totalPages}
+              </span>
+              <button
+                type="button"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((p) => p + 1)}
+                className="px-3 py-1 border rounded disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
 
         <div>
-          <label className="text-sm font-medium">Kode Voucher</label>
-          <input
-            value={voucherCode}
-            onChange={(e) => setVoucherCode(e.target.value)}
-            onBlur={validateVoucher}
-            className="w-full mt-2 px-4 py-3 border rounded-lg"
-            placeholder="Optional"
-          />
+          <label className="text-sm font-medium">Kode Voucher (opsional)</label>
+          <div className="flex gap-2 mt-2">
+            <input
+              value={voucherCode}
+              onChange={(e) => setVoucherCode(e.target.value)}
+              className="flex-1 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#009788]"
+              placeholder="Masukkan kode voucher"
+            />
+            <button
+              type="button"
+              onClick={validateVoucher}
+              disabled={loading || !selectedCode || !voucherCode.trim()}
+              className={clsx(
+                "px-5 py-3 rounded-lg font-medium text-white",
+                loading || !selectedCode || !voucherCode.trim()
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-[#009788] hover:bg-[#008577]"
+              )}
+            >
+              {loading ? "Memeriksa..." : "Terapkan"}
+            </button>
+          </div>
+
+          {/* Keterangan voucher */}
           {voucherError && (
             <p className="text-sm text-red-600 mt-1">{voucherError}</p>
+          )}
+          {voucherSuccess && (
+            <p className="text-sm text-green-600 mt-1 font-medium">
+              {voucherSuccess}
+            </p>
+          )}
+          {originalPrice !== null && finalPrice !== null && (
+            <div className="mt-2 text-sm">
+              <p>
+                Harga asli: <s className="text-gray-500">{formatRupiah(originalPrice)}</s>
+              </p>
+              <p className="font-semibold text-[#009788]">
+                Harga setelah voucher: {formatRupiah(finalPrice)}
+              </p>
+            </div>
           )}
         </div>
 
@@ -273,24 +340,26 @@ export default function PlnTokenForm() {
           <p className="text-xl font-bold text-[#009788]">
             {formatRupiah(saldo)}
           </p>
-          {total > saldo && (
-            <p className="text-sm text-red-600 mt-2">Saldo tidak mencukupi</p>
+          {total > saldo && selectedCode && (
+            <p className="text-sm text-red-600 mt-2 font-medium">
+              Saldo tidak mencukupi untuk transaksi ini
+            </p>
           )}
         </div>
 
-        <div className="flex justify-between font-semibold">
-          <span>Total</span>
-          <span>{formatRupiah(total)}</span>
+        <div className="flex justify-between font-semibold text-lg">
+          <span>Total Bayar</span>
+          <span className="text-[#009788]">{formatRupiah(total)}</span>
         </div>
 
         <button
           type="submit"
-          disabled={loading || total > saldo || !selectedCode || !meter || !phone}
+          disabled={loading || total > saldo || !selectedCode || !meter.trim() || !phone.trim()}
           className={clsx(
-            "w-full py-3 rounded-lg",
-            loading || total > saldo || !selectedCode
-              ? "bg-gray-400"
-              : "bg-[#009788] text-white"
+            "w-full py-3 rounded-lg font-semibold text-white transition",
+            loading || total > saldo || !selectedCode || !meter.trim() || !phone.trim()
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-[#009788] hover:bg-[#008577]"
           )}
         >
           {loading ? "Memproses..." : "Beli Token PLN"}

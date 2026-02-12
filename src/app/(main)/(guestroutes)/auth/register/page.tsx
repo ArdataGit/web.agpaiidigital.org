@@ -42,6 +42,7 @@ export default function Register() {
     { name: "Anggota Luar Biasa", value: 9 },
     { name: "Anggota Kehormatan", value: 10 },
     { name: "Siswa", value: STUDENT_ROLE_ID },
+    { name: "Mitra", value: 14 },
   ];
 
   const isSiswaSelected = selectedRole?.value === STUDENT_ROLE_ID;
