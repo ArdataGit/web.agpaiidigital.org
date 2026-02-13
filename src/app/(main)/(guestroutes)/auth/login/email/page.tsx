@@ -31,20 +31,17 @@ export default function LoginEmailPage() {
     },
     onSuccess: async (data) => {
       localStorage.setItem("access_token", data?.access_token);
-      
+
       const roleId = Number(data?.data?.role_id ?? data?.data?.role?.id ?? data?.data?.role);
 
-      // Refresh auth dan tunggu
-      await queryClient.invalidateQueries({ queryKey: ["auth"] });
-      await new Promise(resolve => setTimeout(resolve, 100));
+      queryClient.invalidateQueries({ queryKey: ["auth"] });
 
-      // ===============================
-      // 🎓 SISWA (role_id = 8 dari STUDENT_ROLE_ID)
-      // ===============================
       if (roleId === 8) {
-        router.replace("/beranda");
-        return;
+        window.location.href = "/beranda";
+      } else {
+        window.location.href = "/";
       }
+    },
 
       // ===============================
       // 👤 ROLE LAIN (Guru, Admin, dll)
