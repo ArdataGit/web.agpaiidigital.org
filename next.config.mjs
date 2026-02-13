@@ -20,14 +20,16 @@ const nextConfig = {
                 https://www.youtube-nocookie.com
                 https://app.midtrans.com
                 https://simulator.sandbox.midtrans.com
-                https://docs.google.com;
+                https://docs.google.com
+                https://tripay.co.id;
               child-src
                 'self'
                 https://www.youtube.com
                 https://www.youtube-nocookie.com
                 https://app.midtrans.com
                 https://simulator.sandbox.midtrans.com
-                https://docs.google.com;
+                https://docs.google.com
+                https://tripay.co.id;
             `
               .replace(/\s{2,}/g, " ")
               .trim(),

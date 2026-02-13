@@ -17,6 +17,8 @@ export default function TopupPage() {
   const [channels, setChannels] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
+  const [showIframe, setShowIframe] = useState(false);
 
   // redirect jika belum login
   useEffect(() => {
@@ -30,7 +32,7 @@ export default function TopupPage() {
     const fetchChannels = async () => {
       try {
         const res = await fetch(
-          "https://admin.agpaiidigital.org/api/tripay/payment-channels"
+          "https://admin.agpaiidigital.org/api/tripay/payment-channels",
         );
         const data = await res.json();
 
@@ -75,7 +77,7 @@ export default function TopupPage() {
             amount,
             method: paymentMethod,
           }),
-        }
+        },
       );
 
       const result = await res.json();
@@ -84,7 +86,8 @@ export default function TopupPage() {
         throw new Error(result.message || "Gagal membuat top up");
       }
 
-      window.location.href = result.checkout_url;
+      setCheckoutUrl(result.checkout_url);
+      setShowIframe(true);
     } catch (err: any) {
       setError(err.message || "Terjadi kesalahan");
     } finally {
@@ -102,9 +105,7 @@ export default function TopupPage() {
 
       <div className="mb-6 p-5 rounded-2xl bg-gradient-to-r from-[#009788] to-[#00796b] text-white shadow">
         <p className="text-sm opacity-90">Top Up Saldo AGPAY</p>
-        <p className="text-xs opacity-80 mt-1">
-          Minimal top up Rp 20.000
-        </p>
+        <p className="text-xs opacity-80 mt-1">Minimal top up Rp 20.000</p>
       </div>
 
       {/* PILIH NOMINAL CEPAT */}
@@ -119,7 +120,7 @@ export default function TopupPage() {
                 "py-3 rounded-xl border text-sm font-semibold transition",
                 amount === val
                   ? "bg-[#009788] text-white border-[#009788]"
-                  : "bg-white text-gray-700 hover:border-[#009788]"
+                  : "bg-white text-gray-700 hover:border-[#009788]",
               )}
             >
               Rp {val.toLocaleString("id-ID")}
@@ -170,11 +171,34 @@ export default function TopupPage() {
           "w-full py-3 rounded-xl font-semibold shadow transition",
           loading
             ? "bg-gray-400 text-white cursor-not-allowed"
-            : "bg-[#009788] hover:bg-[#008577] text-white"
+            : "bg-[#009788] hover:bg-[#008577] text-white",
         )}
       >
         {loading ? "Memproses..." : "Top Up Sekarang"}
       </button>
+
+      {/* IFRAME PAYMENT MODAL */}
+      {showIframe && checkoutUrl && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="flex justify-between items-center p-4 border-b">
+              <h3 className="font-semibold">Pembayaran</h3>
+              <button
+                onClick={() => setShowIframe(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+            <iframe
+              src={checkoutUrl}
+              className="w-full h-[80vh]"
+              title="Payment Gateway"
+              allow="payment"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
