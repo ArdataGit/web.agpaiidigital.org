@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import clsx from "clsx";
 
 const API_BASE = "https://admin.agpaiidigital.org";
+
+import CountdownTimer from "@/components/cbt/CountdownTimer";
 
 type Soal = {
   id: number;
@@ -15,7 +17,9 @@ type Soal = {
 export default function ExamPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const latihanId = params.id as string;
+  const urlPaketId = searchParams.get("paket_id");
 
   const [soalList, setSoalList] = useState<Soal[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -30,16 +34,79 @@ export default function ExamPage() {
 
   const currentSoal = soalList[currentIndex];
 
-  /* FETCH SOAL */
+  // Bump version to force clear old caches (v1 -> v2)
+  const SESSION_KEY = `cbt_session_v2_${latihanId}`;
+
+  /* FETCH SOAL & RESTORE SESSION */
   useEffect(() => {
-    const fetchSoal = async () => {
+    const initExam = async () => {
+      let isRestored = false;
+
+      // 1. Cek LocalStorage
+      const savedSession = localStorage.getItem(SESSION_KEY);
+      if (savedSession) {
+        try {
+          const parsed = JSON.parse(savedSession);
+          if (parsed.soalList && parsed.soalList.length > 0) {
+            console.log("Restoring session from LocalStorage...");
+            // Force sort by ID on restore
+            const sortedList = (parsed.soalList || []).sort((a: Soal, b: Soal) => a.id - b.id);
+            setSoalList(sortedList);
+            setJawaban(parsed.jawaban || {});
+            
+            // Hitung sisa waktu
+            const elapsedSeconds = Math.floor((Date.now() - parsed.timestamp) / 1000);
+            const remaining = parsed.originalDuration - elapsedSeconds;
+            
+            setDurasi(remaining > 0 ? remaining : 0);
+            setLoading(false);
+            
+            isRestored = true;
+            // REMOVED 'return' to allow background fetch for updates
+          }
+        } catch (e) {
+          console.error("Error parsing session:", e);
+          localStorage.removeItem(SESSION_KEY);
+        }
+      }
+
+      // 2. Fetch API (Always run to get latest questions)
       try {
         const res = await fetch(`${API_BASE}/api/cbt/latihan/${latihanId}`);
         const json = await res.json();
 
         if (json.success) {
-          setSoalList(json.soal || []);
-          setDurasi((json.durasi || 0) * 60);
+          // Force sort by ID
+          const fetchedSoal = (json.soal || []).sort((a: Soal, b: Soal) => a.id - b.id);
+          const fetchedDurasi = (json.durasi || 0) * 60;
+          const fetchedPaketId = json.paket_id || (json.paket && json.paket.id);
+
+          // Update State with latest questions
+          setSoalList(fetchedSoal);
+          
+          if (!isRestored) {
+            // Initial Load (One time setup)
+            setDurasi(fetchedDurasi);
+            localStorage.setItem(SESSION_KEY, JSON.stringify({
+              soalList: fetchedSoal,
+              jawaban: {},
+              originalDuration: fetchedDurasi,
+              timestamp: Date.now(), // Start time
+              paketId: fetchedPaketId
+            }));
+          } else {
+            // Background Update (Merge)
+            // Update SoalList in cache, but KEEP original timestamp/answers
+            const currentCache = localStorage.getItem(SESSION_KEY);
+            if (currentCache) {
+               const parsed = JSON.parse(currentCache);
+               parsed.soalList = fetchedSoal; // Update questions
+               // parsed.jawaban is kept from local state (via auto-save effect)
+               // parsed.timestamp is kept
+               localStorage.setItem(SESSION_KEY, JSON.stringify(parsed));
+               console.log("Updated question list from server");
+            }
+          }
         }
       } catch (err) {
         console.error(err);
@@ -48,49 +115,58 @@ export default function ExamPage() {
       }
     };
 
-    if (latihanId) fetchSoal();
+    if (latihanId) initExam();
   }, [latihanId]);
 
-  /* TIMER */
+  /* AUTO-SAVE JAWABAN TO LOCALSTORAGE */
   useEffect(() => {
-    if (durasi <= 0) return;
+    if (soalList.length === 0) return;
 
-    const interval = setInterval(() => {
-      setDurasi((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          handleSelesai();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    // Kita hanya update field 'jawaban' di localStorage agar tidak overwrite timestamp
+    const savedSession = localStorage.getItem(SESSION_KEY);
+    if (savedSession) {
+      const parsed = JSON.parse(savedSession);
+      parsed.jawaban = jawaban;
+      localStorage.setItem(SESSION_KEY, JSON.stringify(parsed));
+    }
+  }, [jawaban, soalList.length, SESSION_KEY]);
 
-    return () => clearInterval(interval);
-  }, [durasi]);
+  /* TIMER logic moved to CountdownTimer component */
 
-  const formatTime = () => {
-    const m = Math.floor(durasi / 60);
-    const s = durasi % 60;
-    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-  };
-
-  /* SIMPAN JAWABAN */
+  /* SIMPAN SATU JAWABAN (Background Sync) */
   const simpanJawaban = async () => {
     if (!currentSoal) return;
-
-    await fetch(`${API_BASE}/api/cbt/latihan/${latihanId}/jawab`, {
+    
+    // Return the promise so we can await it if needed
+    return fetch(`${API_BASE}/api/cbt/latihan/${latihanId}/jawab`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         soal_id: currentSoal.id,
         jawaban: jawaban[currentSoal.id] || "",
       }),
-    });
+    }).catch(err => console.error("Gagal sync jawaban:", err));
   };
 
-  const handleNext = async () => {
-    await simpanJawaban();
+  /* SYNC SEMUA JAWABAN (Force Sync on Submit) */
+  const syncAllAnswers = async () => {
+    console.log("Syncing all answers before submit...");
+    const promises = Object.entries(jawaban).map(([id, val]) => {
+      return fetch(`${API_BASE}/api/cbt/latihan/${latihanId}/jawab`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          soal_id: Number(id),
+          jawaban: val,
+        }),
+      }).catch(e => console.error(`Failed to sync soal ${id}:`, e));
+    });
+    
+    await Promise.all(promises);
+  };
+
+  const handleNext = () => {
+    simpanJawaban(); // Fire and forget
     if (currentIndex < soalList.length - 1) setCurrentIndex(currentIndex + 1);
   };
 
@@ -102,7 +178,10 @@ export default function ExamPage() {
   const handleSelesai = async () => {
     try {
       setSubmitting(true);
-      await simpanJawaban();
+      
+      // Force sync semua jawaban yang ada di local state/storage
+      // untuk memastikan server menerima data terbaru
+      await syncAllAnswers();
 
       const res = await fetch(
         `${API_BASE}/api/cbt/latihan/${latihanId}/selesai`,
@@ -112,6 +191,25 @@ export default function ExamPage() {
       const json = await res.json();
 
       if (json.success) {
+        // Clear Mapping Resume jika ada
+        const savedSession = localStorage.getItem(SESSION_KEY);
+        let paketIdToClear = urlPaketId;
+
+        if (savedSession) {
+            try {
+                const parsed = JSON.parse(savedSession);
+                if (parsed.paketId) {
+                    paketIdToClear = parsed.paketId;
+                }
+            } catch(e) { console.error(e); }
+        }
+        
+        if (paketIdToClear) {
+            localStorage.removeItem(`cbt_mapper_${paketIdToClear}`);
+        }
+
+        // Hapus sesi lokal setelah berhasil submit
+        localStorage.removeItem(SESSION_KEY);
         router.push(`/cbt/result/${latihanId}`);
       }
     } catch (err) {
@@ -130,7 +228,7 @@ export default function ExamPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100" style={{ overflowAnchor: "none" }}>
       {/* HEADER */}
       <div className="bg-teal-700 text-white px-4 py-4 flex justify-between items-center">
         <button onClick={() => setShowExitModal(true)}>←</button>
@@ -140,9 +238,12 @@ export default function ExamPage() {
 
       {/* TIMER */}
       <div className="flex justify-center mt-4">
-        <div className="bg-orange-400 text-white px-6 py-2 rounded-full font-semibold">
-          {formatTime()}
-        </div>
+        {durasi > 0 && (
+          <CountdownTimer
+            initialSeconds={durasi}
+            onTimeUp={handleSelesai}
+          />
+        )}
       </div>
 
       {/* NOMOR SOAL */}

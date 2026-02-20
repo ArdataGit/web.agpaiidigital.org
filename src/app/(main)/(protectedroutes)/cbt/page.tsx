@@ -65,12 +65,21 @@ export default function CBTListPage() {
         return;
       }
 
+      // Check for Resume Support
+      const resumeId = localStorage.getItem(`cbt_mapper_${paketId}`);
+      if (resumeId) {
+        // If we have a stored ID, try to resume it
+        console.log("Resuming previous session:", resumeId);
+        window.location.href = `/cbt/exam/${resumeId}?paket_id=${paketId}`;
+        return;
+      }
+
       const res = await fetch(`${API_BASE}/api/cbt/latihan/mulai`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           paket_id: paketId,
-          user_id: auth.id, // 🔥 ini tambahan penting
+          user_id: auth.id,
         }),
       });
 
@@ -81,7 +90,9 @@ export default function CBTListPage() {
       if (json.success) {
         const latihanId = json.latihan_id;
         if (latihanId) {
-          window.location.href = `/cbt/exam/${latihanId}`;
+          // Store mapping for resume
+          localStorage.setItem(`cbt_mapper_${paketId}`, String(latihanId));
+          window.location.href = `/cbt/exam/${latihanId}?paket_id=${paketId}`;
         }
       } else {
         setError(json.message || "Gagal memulai latihan");

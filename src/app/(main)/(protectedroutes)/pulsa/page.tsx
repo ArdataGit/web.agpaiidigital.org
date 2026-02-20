@@ -57,7 +57,7 @@ export default function PulsaForm() {
   /* ================== FORMAT RUPIAH (KONSISTEN DENGAN TOKEN LISTRIK) ================== */
   const formatRupiah = (value: number | null | undefined) => {
     if (!value || isNaN(value)) return "Rp 0";
-    return `Rp ${value.toLocaleString("id-ID")}`;
+    return `Rp ${value.toLocaleString("id-ID", { maximumFractionDigits: 0 })}`;
   };
 
   /* ================== SALDO ================== */
@@ -94,7 +94,7 @@ export default function PulsaForm() {
           id: item.code,
           value: item.price,
           name: item.name,
-          label: `Rp ${item.price.toLocaleString("id-ID")}`,
+          label: `Rp ${item.price.toLocaleString("id-ID", { maximumFractionDigits: 0 })}`,
         }))
       );
     } catch {
@@ -342,11 +342,42 @@ export default function PulsaForm() {
             )}
           </div>
 
+          {/* Nominal Pulsa */}
+          {provider && (
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+              <label className="text-sm font-semibold text-slate-700 block mb-4">Pilih Nominal</label>
+              {loading && pulsaOptions.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="inline-block w-8 h-8 border-4 border-[#009788]/30 border-t-[#009788] rounded-full animate-spin"></div>
+                  <p className="text-sm text-slate-500 mt-3">Memuat nominal...</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  {pulsaOptions.map((item) => (
+                    <div
+                      key={item.id}
+                      onClick={() => handleSelectNominal(item)}
+                      className={clsx(
+                        "cursor-pointer p-4 border-2 rounded-xl text-center transition-all duration-200",
+                        selectedCode === item.id
+                          ? "border-[#009788] bg-[#009788]/5 shadow-md scale-105"
+                          : "border-slate-200 hover:border-[#009788]/30 hover:shadow-sm"
+                      )}
+                    >
+                      <p className="font-semibold text-slate-800">{item.name}</p>
+                      <p className="text-sm text-slate-500 mt-1">{item.label}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Voucher */}
           {phone.trim() && (
             <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
               <label className="text-sm font-semibold text-slate-700 block mb-3">Kode Voucher</label>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <input
                   type="text"
                   value={voucherCode}
@@ -354,9 +385,13 @@ export default function PulsaForm() {
                     setVoucherCode(e.target.value.toUpperCase());
                     if (finalPrice !== null) resetVoucher();
                   }}
-                  placeholder="Ketik kode voucher di sini"
-                  className="flex-1 px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#009788]/50 focus:border-[#009788]"
-                  disabled={voucherLoading}
+                  placeholder={
+                    !selectedCode
+                      ? "Pilih nominal pulsa terlebih dahulu"
+                      : "Ketik kode voucher di sini"
+                  }
+                  className="flex-1 px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#009788]/50 focus:border-[#009788] disabled:bg-gray-100 disabled:text-gray-400"
+                  disabled={voucherLoading || !selectedCode}
                 />
                 <button
                   type="button"
@@ -415,37 +450,6 @@ export default function PulsaForm() {
                   </svg>
                   {voucherError}
                 </p>
-              )}
-            </div>
-          )}
-
-          {/* Nominal Pulsa */}
-          {provider && (
-            <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
-              <label className="text-sm font-semibold text-slate-700 block mb-4">Pilih Nominal</label>
-              {loading && pulsaOptions.length === 0 ? (
-                <div className="text-center py-8">
-                  <div className="inline-block w-8 h-8 border-4 border-[#009788]/30 border-t-[#009788] rounded-full animate-spin"></div>
-                  <p className="text-sm text-slate-500 mt-3">Memuat nominal...</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-3">
-                  {pulsaOptions.map((item) => (
-                    <div
-                      key={item.id}
-                      onClick={() => handleSelectNominal(item)}
-                      className={clsx(
-                        "cursor-pointer p-4 border-2 rounded-xl text-center transition-all duration-200",
-                        selectedCode === item.id
-                          ? "border-[#009788] bg-[#009788]/5 shadow-md scale-105"
-                          : "border-slate-200 hover:border-[#009788]/30 hover:shadow-sm"
-                      )}
-                    >
-                      <p className="font-semibold text-slate-800">{item.name}</p>
-                      <p className="text-sm text-slate-500 mt-1">{item.label}</p>
-                    </div>
-                  ))}
-                </div>
               )}
             </div>
           )}

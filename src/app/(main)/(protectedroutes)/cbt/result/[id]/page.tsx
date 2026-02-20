@@ -177,7 +177,7 @@ export default function ResultPage() {
           <div className="grid grid-cols-2 gap-6 text-sm">
             <div>
               <p className="text-gray-500">Waktu Mulai</p>
-              <p className="font-medium text-gray-800 mt-1">
+              <div className="font-medium text-gray-800 mt-1">
                 {(() => {
                   const { tanggal, jam } = formatTanggalJam(data.waktu_mulai);
                   return (
@@ -187,11 +187,11 @@ export default function ResultPage() {
                     </>
                   );
                 })()}
-              </p>
+              </div>
             </div>
             <div>
               <p className="text-gray-500">Waktu Selesai</p>
-              <p className="font-medium text-gray-800 mt-1">
+              <div className="font-medium text-gray-800 mt-1">
                 {(() => {
                   const { tanggal, jam } = formatTanggalJam(data.waktu_selesai);
                   return (
@@ -201,7 +201,7 @@ export default function ResultPage() {
                     </>
                   );
                 })()}
-              </p>
+              </div>
             </div>
           </div>
         </div>
@@ -264,20 +264,29 @@ export default function ResultPage() {
                       />
                     </div>
 
-                    {soal.jawaban_user && (
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-gray-500">Jawabanmu:</p>
-                          <p className="font-medium">{soal.jawaban_user}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-500">Jawaban Benar:</p>
-                          <p className="font-medium text-green-700">
-                            {soal.jawaban_benar}
-                          </p>
-                        </div>
+                    {/* Always show answers regardless of user input */}
+                    <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-gray-100/50">
+                      <div>
+                        <p className="text-xs text-gray-400 mb-1 uppercase tracking-wider font-semibold">
+                          Jawabanmu
+                        </p>
+                        <p
+                          className={`font-medium ${
+                            soal.is_benar ? "text-green-600" : "text-red-500"
+                          }`}
+                        >
+                          {soal.jawaban_user || "-"}
+                        </p>
                       </div>
-                    )}
+                      <div>
+                        <p className="text-xs text-gray-400 mb-1 uppercase tracking-wider font-semibold">
+                          Jawaban Benar
+                        </p>
+                        <p className="font-medium text-green-600">
+                          {soal.jawaban_benar}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
