@@ -30,7 +30,7 @@ export default function Card() {
   const { data: template, isLoading: templateLoading } = useQuery({
     queryKey: ["kartuTemplate"],
     queryFn: async () => {
-      const res = await fetch("https://mitra.agpaiidigital.org/api/get-kartu-template");
+      const res = await fetch("https://admin.agpaiidigital.org/api/get-kartu-template");
       if (res.status === 200) {
         const data = await res.json();
         return data;

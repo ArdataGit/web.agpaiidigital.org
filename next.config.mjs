@@ -42,7 +42,7 @@ const nextConfig = {
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "cdn-agpaiidigital.online" },
-      { protocol: "https", hostname: "mitra.agpaiidigital.org" },
+      { protocol: "https", hostname: "admin.agpaiidigital.org" },
       { protocol: "https", hostname: "file.agpaiidigital.org" },
       { protocol: "https", hostname: "via.placeholder.com" },
       { protocol: "https", hostname: "agpaii.or.id" },
