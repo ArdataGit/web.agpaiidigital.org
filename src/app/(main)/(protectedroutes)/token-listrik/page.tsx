@@ -49,7 +49,7 @@ export default function PlnTokenForm() {
   }, [auth?.id]);
 
   const formatRupiah = (value: number) =>
-    `Rp ${value.toLocaleString("id-ID")}`;
+    `Rp ${value.toLocaleString("id-ID", { maximumFractionDigits: 0 })}`;
 
   /* ================= TOKEN OPTIONS ================= */
   const fetchTokenOptions = async () => {
@@ -124,6 +124,7 @@ export default function PlnTokenForm() {
           ? `Voucher berhasil! Potongan: ${formatRupiah(potongan)}`
           : `Voucher diterapkan (tanpa potongan)`
       );
+
     } catch (e: any) {
       setVoucherError(e.message || "Voucher tidak valid");
       setOriginalPrice(null);
@@ -292,12 +293,17 @@ export default function PlnTokenForm() {
 
         <div>
           <label className="text-sm font-medium">Kode Voucher (opsional)</label>
-          <div className="flex gap-2 mt-2">
+          <div className="flex flex-col sm:flex-row gap-2 mt-2">
             <input
               value={voucherCode}
               onChange={(e) => setVoucherCode(e.target.value)}
-              className="flex-1 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#009788]"
-              placeholder="Masukkan kode voucher"
+              className="flex-1 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#009788] disabled:bg-gray-100 disabled:text-gray-400"
+              placeholder={
+                !selectedCode
+                  ? "Pilih nominal token dulu"
+                  : "Masukkan kode voucher"
+              }
+              disabled={loading || !selectedCode}
             />
             <button
               type="button"

@@ -79,7 +79,7 @@ export default function DataForm() {
   }, [auth?.id]);
 	
     const formatRupiah = (value: number) =>
-      `Rp ${value.toLocaleString("id-ID")}`;
+      `Rp ${value.toLocaleString("id-ID", { maximumFractionDigits: 0 })}`;
 
   /* ================= DATA OPTIONS ================= */
   const fetchDataOptions = async (operatorId: string, phone: string) => {
@@ -103,7 +103,7 @@ export default function DataForm() {
           id: item.code,
           value: item.price,
           name: item.name,
-          label: `Rp ${item.price.toLocaleString("id-ID")}`,
+          label: `Rp ${item.price.toLocaleString("id-ID", { maximumFractionDigits: 0 })}`,
         }))
       );
     } catch (e: any) {
@@ -179,7 +179,7 @@ export default function DataForm() {
       Swal.fire({
         icon: "success",
         title: "Voucher Berhasil!",
-        text: `Hemat Rp ${(data.original_price - data.final_price).toLocaleString("id-ID") || "diterapkan"}`,
+        text: `Hemat Rp ${(data.original_price - data.final_price).toLocaleString("id-ID")}`,
         timer: 2000,
         showConfirmButton: false,
       });
@@ -348,6 +348,48 @@ export default function DataForm() {
             )}
           </div>
 
+          {/* Paket Data */}
+          {provider && (
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+              <label className="text-sm font-semibold text-slate-700 block mb-4">Pilih Paket Data</label>
+              {loading && dataOptions.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="inline-block w-8 h-8 border-4 border-[#009788]/30 border-t-[#009788] rounded-full animate-spin"></div>
+                  <p className="text-sm text-slate-500 mt-3">Memuat paket...</p>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 gap-3 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                    {dataOptions.map((item) => (
+                      <div
+                        key={item.id}
+                        onClick={() => handleSelectPackage(item)}
+                        className={clsx(
+                          "cursor-pointer p-4 border-2 rounded-xl transition-all duration-200",
+                          selectedCode === item.id
+                            ? "border-[#009788] bg-[#009788]/5 shadow-md"
+                            : "border-slate-200 hover:border-[#009788]/30 hover:shadow-sm"
+                        )}
+                      >
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <p className="font-semibold text-slate-800">{item.name}</p>
+                            <p className="text-sm text-slate-500 mt-1">{item.label}</p>
+                          </div>
+                          {selectedCode === item.id && (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[#009788]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
           {/* Voucher - Full manual input */}
           {phone.trim() && (
             <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
@@ -355,7 +397,7 @@ export default function DataForm() {
                 Kode Voucher (Opsional)
               </label>
 
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <input
                   type="text"
                   value={voucherCode}
@@ -363,9 +405,13 @@ export default function DataForm() {
                     setVoucherCode(e.target.value.toUpperCase());
                     if (finalPrice !== null) resetVoucher();
                   }}
-                  placeholder="Ketik kode voucher di sini"
-                  className="flex-1 px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#009788]/50 focus:border-[#009788]"
-                  disabled={voucherLoading}
+                  placeholder={
+                    !selectedCode
+                      ? "Pilih paket data terlebih dahulu"
+                      : "Ketik kode voucher di sini"
+                  }
+                  className="flex-1 px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#009788]/50 focus:border-[#009788] disabled:bg-gray-100 disabled:text-gray-400"
+                  disabled={voucherLoading || !selectedCode}
                 />
                 <button
                   type="button"
@@ -446,48 +492,6 @@ export default function DataForm() {
                   </svg>
                   {voucherError}
                 </p>
-              )}
-            </div>
-          )}
-
-          {/* Paket Data */}
-          {provider && (
-            <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
-              <label className="text-sm font-semibold text-slate-700 block mb-4">Pilih Paket Data</label>
-              {loading && dataOptions.length === 0 ? (
-                <div className="text-center py-8">
-                  <div className="inline-block w-8 h-8 border-4 border-[#009788]/30 border-t-[#009788] rounded-full animate-spin"></div>
-                  <p className="text-sm text-slate-500 mt-3">Memuat paket...</p>
-                </div>
-              ) : (
-                <>
-                  <div className="grid grid-cols-1 gap-3">
-                    {dataOptions.map((item) => (
-                      <div
-                        key={item.id}
-                        onClick={() => handleSelectPackage(item)}
-                        className={clsx(
-                          "cursor-pointer p-4 border-2 rounded-xl transition-all duration-200",
-                          selectedCode === item.id
-                            ? "border-[#009788] bg-[#009788]/5 shadow-md"
-                            : "border-slate-200 hover:border-[#009788]/30 hover:shadow-sm"
-                        )}
-                      >
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <p className="font-semibold text-slate-800">{item.name}</p>
-                            <p className="text-sm text-slate-500 mt-1">{item.label}</p>
-                          </div>
-                          {selectedCode === item.id && (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[#009788]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </>
               )}
             </div>
           )}

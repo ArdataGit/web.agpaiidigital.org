@@ -84,7 +84,7 @@ export default function Home() {
 
   const formatRupiah = (value?: number | string) => {
     const number = Number(value) || 0;
-    return number.toLocaleString("id-ID");
+    return number.toLocaleString("id-ID", { maximumFractionDigits: 0 });
   };
 
   useEffect(() => {
@@ -287,23 +287,37 @@ export default function Home() {
         className="text-center max-w-[480px] z-[996] bg-cover bg-bottom mx-auto top-0 left-0 right-0 px-6 pt-16 pb-6 relative"
       >
         <div className="absolute top-0 left-0 right-0 z-[9999]">
-          <TopBar withBackButton href="/" >
-            <div className="flex items-center justify-between w-full mr-6">
-              <span className="text-white font-semibold">AGPAY</span>
-              
-              {/* Button Lihat Saldo - Minimalist */}
+          <TopBar
+            withBackButton
+            href="/"
+            rightContent={
               <Link href="/saldo-saya">
                 <button className="flex items-center gap-2 px-3 py-1.5 bg-white/20 backdrop-blur-md rounded-lg hover:bg-white/30 transition-all border border-white/30">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 text-white"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                    />
                   </svg>
                   <div className="text-left">
                     <p className="text-[10px] text-white/80 leading-none">Saldo</p>
-                    <p className="text-xs font-bold text-white leading-tight">Rp {formatRupiah(saldo)}</p>
+                    <p className="text-xs font-bold text-white leading-tight">
+                      Rp {formatRupiah(saldo)}
+                    </p>
                   </div>
                 </button>
               </Link>
-            </div>
+            }
+          >
+            <span className="text-white font-semibold">AGPAY</span>
           </TopBar>
         </div>
 

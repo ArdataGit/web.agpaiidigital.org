@@ -130,7 +130,7 @@ const LivePage: React.FC = () => {
 
   return (
     <div className="pt-[3.9rem] bg-gray-100 min-h-screen pb-8">
-      <TopBar withBackButton>Live</TopBar>
+      <TopBar withBackButton href="/">Live</TopBar>
 
       <div className="p-4">
         {/* Go Live Button */}

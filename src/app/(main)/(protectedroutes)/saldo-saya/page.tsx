@@ -38,10 +38,14 @@ export default function HistoryPage() {
   const [topups, setTopups] = useState<TopupHistory[]>([]);
   const [transactions, setTransactions] = useState<TransactionHistory[]>([]);
 
+  // Add state for iframe modal
+  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
+  const [showIframe, setShowIframe] = useState(false);
+
   const formatRupiah = (value?: number | string) => {
     const num = typeof value === "string" ? parseFloat(value) : Number(value);
     const absNum = Math.abs(num || 0);
-    const formatted = absNum.toLocaleString("id-ID");
+    const formatted = absNum.toLocaleString("id-ID", { maximumFractionDigits: 0 });
     return num < 0 ? `-${formatted}` : formatted;
   };
 
@@ -212,7 +216,10 @@ export default function HistoryPage() {
                   {item.status === "ON_PROGRESS" && item.checkout_url && (
                     <div className="flex justify-end mt-0">
                       <button
-                        onClick={() => window.open(item.checkout_url!, "_blank")}
+                        onClick={() => {
+                          setCheckoutUrl(item.checkout_url!);
+                          setShowIframe(true);
+                        }}
                         className="px-4 py-2 bg-[#009788] hover:bg-[#008577] text-white text-xs font-semibold rounded-lg transition-all shadow-sm"
                       >
                         Bayar Sekarang
@@ -267,6 +274,29 @@ export default function HistoryPage() {
           </div>
         )}
       </div>
+
+      {/* IFRAME PAYMENT MODAL */}
+      {showIframe && checkoutUrl && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="flex justify-between items-center p-4 border-b">
+              <h3 className="font-semibold">Pembayaran</h3>
+              <button
+                onClick={() => setShowIframe(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+            <iframe
+              src={checkoutUrl}
+              className="w-full h-[80vh]"
+              title="Payment Gateway"
+              allow="payment"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

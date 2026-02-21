@@ -21,34 +21,42 @@ export default function LoginEmailPage() {
   const { register, handleSubmit } = useForm<LoginFormData>();
 
   const { mutate: submit, isPending: loading } = useMutation({
-    mutationFn: async (data: LoginFormData) => {
-      const res = await API.post("/login", data);
-      if (res.status === 200) return res.data;
-    },
-    onError: (err: any) => {
-      const errorMessage = getErrorMessage(err, "login");
-      toast.error(errorMessage);
-    },
-    onSuccess: async (data) => {
-      localStorage.setItem("access_token", data?.access_token);
+  mutationFn: async (data: LoginFormData) => {
+    const res = await API.post("/login", data);
+    if (res.status === 200) return res.data;
+  },
 
-      const roleId = Number(data?.data?.role_id ?? data?.data?.role?.id ?? data?.data?.role);
+  onError: (err: any) => {
+    const errorMessage = getErrorMessage(err, "login");
+    toast.error(errorMessage);
+  },
 
-      queryClient.invalidateQueries({ queryKey: ["auth"] });
+  onSuccess: async (data) => {
+    localStorage.setItem("access_token", data?.access_token);
 
-      if (roleId === 8) {
-        window.location.href = "/beranda";
-      } else {
-        window.location.href = "/";
-      }
-    },
+    const roleId = Number(
+      data?.data?.role_id ??
+      data?.data?.role?.id ??
+      data?.data?.role
+    );
 
-      // ===============================
-      // 👤 ROLE LAIN (Guru, Admin, dll)
-      // ===============================
-      router.replace("/");
-    },
-  });
+    await queryClient.invalidateQueries({ queryKey: ["auth"] });
+
+    // ===============================
+    // ROLE SISWA
+    // ===============================
+    if (roleId === 8) {
+      router.replace("/beranda");
+      return;
+    }
+
+    // ===============================
+    // ROLE LAIN (Guru, Admin, dll)
+    // ===============================
+    router.replace("/");
+  },
+});
+
 
   return (
     <div className="min-h-screen bg-white flex flex-col">

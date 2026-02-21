@@ -46,7 +46,7 @@ export default function StartLivePage() {
         hostAvatar: user.avatar || "",
         title: title.trim(),
         roomId: newRoomId,
-        status: "live",
+        status: "preparing",
         viewers: [], // Array of viewer objects
         startedAt: serverTimestamp(),
       });
