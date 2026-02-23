@@ -123,7 +123,7 @@ export default function ZegoLiveHost({
               role: ZegoUIKitPrebuilt.Host,
             },
           },
-          showPreJoinView: false,
+          showPreJoinView: true,
           showLeavingView: false,
           showRoomTimer: false,
           turnOnCameraWhenJoining: true,

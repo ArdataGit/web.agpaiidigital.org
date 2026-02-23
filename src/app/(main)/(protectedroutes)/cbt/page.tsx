@@ -70,7 +70,7 @@ export default function CBTListPage() {
       if (resumeId) {
         // If we have a stored ID, try to resume it
         console.log("Resuming previous session:", resumeId);
-        window.location.href = `/cbt/exam/${resumeId}?paket_id=${paketId}`;
+        window.location.href = `/cbt/exam/${resumeId}`;
         return;
       }
 
@@ -92,7 +92,7 @@ export default function CBTListPage() {
         if (latihanId) {
           // Store mapping for resume
           localStorage.setItem(`cbt_mapper_${paketId}`, String(latihanId));
-          window.location.href = `/cbt/exam/${latihanId}?paket_id=${paketId}`;
+          window.location.href = `/cbt/exam/${latihanId}`;
         }
       } else {
         setError(json.message || "Gagal memulai latihan");
