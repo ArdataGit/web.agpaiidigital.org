@@ -51,7 +51,6 @@ export const isPnsStatusCompleted = (user: any) => {
 		"is_pns",
 		"is_certification",
 		"is_non_pns_inpassing",
-		"employment_status",
 		"pendidikan",
 		"jurusan",
 		"kampus",
